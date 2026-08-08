@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NASA Earth Information Center — Hyperwall</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:100%; height:100%; background:#000; overflow:hidden;
+    font-family:-apple-system,"Helvetica Neue",Arial,sans-serif; color:#fff; }
+  #stage { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:#000; }
+  video { max-width:100%; max-height:100%; width:auto; height:auto; display:block; }
+  iframe { border:0; width:100%; height:100%; background:#000; }
+  #frameWrap { position:fixed; inset:0; display:none; }
+
+  #caption { position:fixed; left:0; right:0; bottom:0; padding:44px 52px 34px;
+    /* Solid panel so bright text inside a visualization never bleeds through the
+       caption. The whole caption still fades out (opacity) to reveal the art. */
+    background:linear-gradient(to top, rgba(0,0,0,0.97) 0%, rgba(0,0,0,0.97) 68%, rgba(0,0,0,0.82) 86%, rgba(0,0,0,0) 100%);
+    transition:opacity .6s ease; }
+  #caption.hidden { opacity:0; }
+  #kicker { font-size:14px; letter-spacing:2.5px; text-transform:uppercase; color:#5fa8d3; margin-bottom:10px; font-weight:600; }
+  #title { font-size:32px; font-weight:600; margin-bottom:10px; line-height:1.15; }
+  #info { font-size:18px; font-weight:400; color:#c3cdd7; line-height:1.5; max-width:1100px; }
+  #credit { font-size:13px; color:#788696; margin-top:14px; }
+
+  #counter { position:fixed; top:26px; right:34px; color:#5f6b78; font-size:14px; letter-spacing:1px; }
+  #brand { position:fixed; top:24px; left:34px; font-size:15px; letter-spacing:1px; color:#8b98a6; }
+  #brand b { color:#dfe6ee; font-weight:600; }
+  #loader { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; color:#4a5560; font-size:16px; letter-spacing:3px; }
+  #err { position:fixed; top:56px; left:34px; color:#9a6a6a; font-size:13px; max-width:44%; }
+  #live { position:fixed; top:24px; left:50%; transform:translateX(-50%); font-size:13px; letter-spacing:2px;
+    color:#7ecb8a; display:none; }
+  #live::before { content:"● "; color:#4caf50; }
+  body.idle { cursor:none; }
+  #help { position:fixed; bottom:14px; right:20px; font-size:12px; color:#4a5560; letter-spacing:.5px; }
+
+  /* ---- data panels (ISS, EONET, APOD, countdowns, launch schedule) ---- */
+  #panel { position:fixed; inset:0; display:none; background:#000; }
+  .emap { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+  .emap-frame { position:relative; aspect-ratio:2/1; width:min(100%,196vh); background:#01030a;
+    box-shadow:0 0 90px rgba(0,0,0,.6) inset; }
+  .emap-frame img { width:100%; height:100%; display:block; opacity:.92; }
+  #eonetPts { position:absolute; inset:0; }
+  .eonet-pt { position:absolute; width:12px; height:12px; margin:-6px 0 0 -6px; border-radius:50%;
+    box-shadow:0 0 6px rgba(0,0,0,.6); opacity:.9; }
+  .iss-dot { position:absolute; width:16px; height:16px; margin:-8px 0 0 -8px; border-radius:50%; background:#fff;
+    box-shadow:0 0 0 4px rgba(126,203,138,.35), 0 0 18px 6px rgba(126,203,138,.7); animation:isspulse 2s infinite; }
+  @keyframes isspulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.28);} }
+  .iss-stats { position:fixed; top:92px; left:34px; font-size:20px; letter-spacing:1px; color:#dfe6ee;
+    background:rgba(0,0,0,.55); padding:12px 16px; border-radius:8px; line-height:1.5; font-variant-numeric:tabular-nums; }
+  .eonet-legend { position:fixed; top:92px; left:34px; display:flex; flex-wrap:wrap; gap:8px 14px; max-width:60%;
+    font-size:14px; color:#c3cdd7; }
+  .eonet-legend span { background:rgba(0,0,0,.5); padding:5px 10px; border-radius:20px; }
+  .apod-img { position:absolute; inset:0; background-size:contain; background-position:center;
+    background-repeat:no-repeat; background-color:#000; }
+  .cd-wrap { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:64px; flex-wrap:wrap; }
+  .cd-card { text-align:center; min-width:360px; }
+  .cd-k { font-size:15px; letter-spacing:3px; text-transform:uppercase; color:#5fa8d3; margin-bottom:14px; }
+  .cd-t { font-size:30px; font-weight:600; margin-bottom:6px; }
+  .cd-when { font-size:16px; color:#8b98a6; margin-bottom:22px; }
+  .cd-num { font-size:52px; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:1px; color:#dfe6ee; }
+  .ev-wrap { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; padding:0 8%; }
+  .ev-h { font-size:26px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:#5fa8d3; margin-bottom:26px; }
+  .ev-row { display:flex; align-items:baseline; gap:26px; padding:16px 0; border-top:1px solid rgba(255,255,255,.08); }
+  .ev-when { width:200px; color:#8b98a6; font-size:18px; font-variant-numeric:tabular-nums; }
+  .ev-name { flex:1; font-size:24px; font-weight:600; color:#eef3f8; }
+  .ev-prov { color:#9aa7b4; font-size:16px; text-align:right; }
+
+  /* ---- crossfade between items ---- */
+  #stage, #frameWrap, #panel { transition:opacity .6s ease; }
+  body.fade-out #stage, body.fade-out #frameWrap, body.fade-out #panel { opacity:0 !important; }
+</style>
+</head>
+<body>
+  <div id="stage">
+    <div id="loader">EARTH INFORMATION CENTER — LOADING…</div>
+    <video id="v" playsinline muted preload="auto"></video>
+  </div>
+  <div id="frameWrap"><iframe id="frame" allow="autoplay; fullscreen"></iframe></div>
+  <div id="panel"></div>
+
+  <div id="brand"><b>NASA</b> · Earth Information Center</div>
+  <div id="counter"></div>
+  <div id="live">LIVE DATA</div>
+  <div id="err"></div>
+
+  <div id="caption" class="hidden">
+    <div id="kicker"></div>
+    <div id="title"></div>
+    <div id="info"></div>
+    <div id="credit">NASA's Scientific Visualization Studio · Public Domain</div>
+  </div>
+  <div id="help">tap/→ skip · ← back · f fullscreen</div>
+
+<script>
+const B = "https://svs.gsfc.nasa.gov/vis/";
+
+/* ---- live-data feeds (all CORS-friendly from a plain browser page) --------
+   NASA_API_KEY: DEMO_KEY works out of the box but is heavily rate-limited.
+   Get a free key at https://api.nasa.gov and put it in the .env file next to
+   this page (see .env.example). Values in .env override the defaults below. */
+let NASA_API_KEY = "DEMO_KEY";
+const EARTH_IMG = "https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57752/land_shallow_topo_2048.jpg";
+// EONET category id -> dot color (unmapped categories fall back to default)
+const EONET_COLORS = { 6:"#e9c46a", 7:"#c9a227", 8:"#ff5a3c", 10:"#4ea8de", 12:"#ff9f1c",
+  15:"#8ecae6", 16:"#c77dff", 17:"#e07a5f", 18:"#e0fbfc", 19:"#f4a261", default:"#5fa8d3" };
+// Upcoming eclipses (UTC of greatest eclipse). The next future one is shown.
+const ECLIPSES = [
+  { date:"2026-08-12", time:"17:46", name:"Total Solar Eclipse",   label:"Arctic · Greenland · Iceland · Spain" },
+  { date:"2026-08-28", time:"04:13", name:"Partial Lunar Eclipse", label:"Americas · Europe · Africa" },
+  { date:"2027-02-06", time:"16:00", name:"Annular Solar Eclipse", label:"Chile · Argentina · Atlantic · W. Africa" },
+  { date:"2027-07-18", time:"16:04", name:"Partial Lunar Eclipse", label:"Africa · Asia · Australia" },
+  { date:"2027-08-02", time:"10:07", name:"Total Solar Eclipse",   label:"Spain · North Africa · Middle East" },
+  { date:"2028-01-26", time:"15:08", name:"Annular Solar Eclipse", label:"Americas · Spain · Portugal" },
+  { date:"2028-07-22", time:"02:56", name:"Total Solar Eclipse",   label:"Australia · New Zealand" }
+];
+
+/* ---- NASA live-stream auto-switch (optional) ----------------------------
+   Detecting whether NASA is broadcasting requires the YouTube Data API v3.
+   There is no CORS-friendly way to check "is this channel live?" from a plain
+   browser page without it (short of running your own proxy). To enable:
+     1. https://console.cloud.google.com/  ->  create a project
+     2. Enable "YouTube Data API v3"
+     3. Create an API key, then RESTRICT it to your wall's URL (HTTP referrer)
+     4. Paste it into YT_API_KEY below
+   Leave YT_API_KEY empty to disable this feature entirely (default).
+
+   Quota note: each check costs 100 units; the free tier is 10,000 units/day.
+   One channel every 15 min = ~96 checks/day = ~9,600 units (fits). Adding more
+   channels or polling faster multiplies the cost -- request a quota increase or
+   slow the poll if you exceed it. */
+let YT_API_KEY = "";                          // set in the .env file (see .env.example)
+const NASA_CHANNELS = [
+  "UCLA_DiR1FfKNvjuUpBHmylQ",                 // NASA (main channel)
+  // "UCakgsb0w7QB0Vh_wD3KGCkg",             // add NASA+ / other channel IDs here
+];
+const LIVE_POLL_MS     = 15 * 60 * 1000;     // how often to check whether NASA is live
+const LIVE_RECHECK_MS  = 3  * 60 * 1000;     // while live, how often to confirm it's still live
+const LIVE_COOLDOWN_MS = 20 * 60 * 1000;     // after you manually skip a live stream, don't auto-return for this long
+
+/* ---------------------------------------------------------------
+   All captions below are the VERBATIM text NASA/SVS publishes for
+   each piece. The ocean-currents entry is the actual Earth
+   Information Center Hyperwall file (32:9, 7680x2160). Live
+   surfaces are the real apps the EIC wall uses. Ordering is my
+   best sequencing — NASA does not publish the wall's exact
+   play order.
+----------------------------------------------------------------*/
+const ITEMS = [
+
+  { type:"video",
+    kicker:"Sun · Heliophysics · Aug 12, 2026",
+    title:"Following the Shadow — August 12, 2026 Total Solar Eclipse",
+    info:"On Wednesday, August 12, 2026, the Moon passes in front of the Sun, casting its shadow across a wide swath of Earth's Northern Hemisphere. The path of totality begins in far northern Siberia, near the North Pole, and travels south through the oceans of the Arctic and North Atlantic, passing over western Iceland (including Reykjavik) and northern Spain. The rest of Europe and parts of North America and Africa experience a partial eclipse. The red swath marks the path of totality; the black oval traveling along it is the umbra, where the Sun is completely blocked.",
+    url: B+"a000000/a005600/a005656/eclipse_202608_global_2160p30.mp4" },
+
+  { type:"video",
+    kicker:"Ocean · EIC Hyperwall",
+    title:"Perpetual Ocean 2 — The Agulhas Current",
+    info:"This visualization showcases the Agulhas Current as it carries warm water along the east coast of Southern Africa. Giant spinning whirlpools called Agulhas Rings break off from this current, each one larger than many cities. These massive rings transport warm water from the Indian Ocean into the Atlantic Ocean, helping move heat around our planet and affecting global weather patterns.",
+    // native EIC hyperwall resolution (3840x1080 chosen for playback; 7680x2160 also exists)
+    url: B+"a000000/a005500/a005505/OceanFlows_AgulhasCurrent_3840x1080.mp4" },
+
+  { type:"video",
+    kicker:"Ocean · El Niño",
+    title:"2015–2016 El Niño — Sea Surface Temperature & Currents",
+    info:"NASA tracks the 2015–2016 El Niño through changes in sea surface temperature and ocean currents. Blue marks water colder than normal, red warmer than normal; yellow arrows show eastward currents and white arrows westward. Warm water sloshes east across the Pacific as the trade winds weaken — the signature of a strong El Niño.",
+    url:"https://svs.gsfc.nasa.gov/vis/a000000/a004500/a004544/GMAO_elNino_oceanTemperatureAnomaly_currents_1080p.mp4" },
+
+  { type:"video",
+    kicker:"Atmosphere · Greenhouse Gases",
+    title:"Global Atmospheric Carbon Dioxide",
+    info:"A NASA model illustrates how carbon dioxide moves through Earth's atmosphere over a single year, built from OCO-2 satellite observations assimilated into NASA's GEOS model. Northern-hemisphere plants draw CO₂ down each summer through photosynthesis, then release it again in fall and winter — a planetary breath visible from space.",
+    url: B+"a000000/a005100/a005115/TotalCO2_OCO2_1920x1080p30.mp4" },
+
+  { type:"video",
+    kicker:"Atmosphere · Greenhouse Gases",
+    title:"Carbon Dioxide and Methane, Side by Side",
+    info:"Volumetric carbon dioxide (CO₂) and methane (CH₄) shown together on a global scale, accumulating in Earth's atmosphere over the course of the year 2021.",
+    url: B+"a000000/a005100/a005115/GHG_Composite_1920x1080p30.mp4" },
+
+  { type:"video", daily:true,
+    kicker:"Wildfires · Updated Daily",
+    title:"Global Wildfire Smoke Forecast",
+    info:"Global wildfire smoke intensity from NASA's GEOS-FP model, tracking brown carbon aerosol optical depth from yesterday through a four-day forecast. Darker areas mean more smoke in the atmospheric column — and poorer air quality. This visualization is regenerated every day; wildfire smoke can travel thousands of miles, carrying PM2.5 particles small enough to enter the bloodstream.",
+    url: B+"a000000/a005600/a005624/GMAO_global_smoke_forecast_4096x2048.mp4" },
+
+  { type:"video",
+    kicker:"Solar System · Planetary Science",
+    title:"Our Solar System",
+    info:"The eight planets plus Pluto, each rendered with its true planetary axial tilt — the angle that gives every world its seasons.",
+    url: B+"a030000/a030700/a030710/planets3x3_pluto_colorMercury_axis_tilt_1080p.mp4" },
+
+  /* ---- ADDED SLIDES: each URL verified HTTP 200 against svs.gsfc.nasa.gov ---- */
+
+  { type:"video",
+    kicker:"Cryosphere · Arctic",
+    title:"Arctic Sea Ice Maximum, 2026",
+    info:"The Arctic Ocean's floating ice cap reaches its yearly maximum extent. Satellite records show the winter maximum shrinking over the decades — a visible marker of a warming polar climate.",
+    url:"https://svs.gsfc.nasa.gov/vis/a000000/a005600/a005629/arctic_sea_ice_2026_max_2160p60.mp4" },
+
+  { type:"video",
+    kicker:"Cryosphere · Antarctica",
+    title:"Antarctic Ice Mass Loss, 2002–2025",
+    info:"NASA's GRACE and GRACE-FO satellites weigh Antarctica from orbit by sensing tiny changes in gravity. The animation reveals hundreds of billions of tons of ice lost each year, concentrated in the vulnerable West Antarctic — including the Thwaites 'Doomsday' Glacier.",
+    url:"https://svs.gsfc.nasa.gov/vis/a030000/a031100/a031158/ais_200204-202503_black_1080p6.mp4" },
+
+  { type:"video",
+    kicker:"Climate · Global Temperature",
+    title:"Climate Spiral — Global Temperature, 1880 → Today",
+    info:"NASA's GISS global temperature record wound into a spiral: the twelve months circle around, year after year, as monthly temperature departures from the late-19th-century average widen and redden. What begins as a tight blue coil slowly swells outward into warm reds — a visceral picture of a warming planet.",
+    url:"https://svs.gsfc.nasa.gov/vis/a000000/a004900/a004975/GISTEMP_Spiral_F_2160sq30.mp4" },
+
+  { type:"video",
+    kicker:"Atmosphere · Aerosols",
+    title:"A World of Aerosols",
+    info:"A NASA GEOS model reveals the invisible particles filling our skies, with a color key: sea salt (blue) spun up by storms, dust (pink/magenta) lifting off deserts, smoke from wildfires (orange/red), and sulfate from pollution and volcanoes (green). On-screen annotations flag hurricanes, Saharan dust, volcanic plumes, and wildfire smoke as they move across the planet.",
+    url:"https://svs.gsfc.nasa.gov/vis/a000000/a005500/a005572/Aerosols_AnnotationsLabel_1920x1080_30p.mp4" },
+
+  { type:"video",
+    kicker:"Extreme Weather · Typhoons",
+    title:"Super Typhoon Bavi",
+    info:"Satellite and model data reveal the towering structure of a super typhoon — among the most intense storms on Earth, drawing its energy from warm tropical seas.",
+    url:"https://svs.gsfc.nasa.gov/vis/a000000/a005600/a005662/Bavi_v22HD.mp4" },
+
+  { type:"video",
+    kicker:"Sun · Solar Dynamics Observatory",
+    title:"Four Days of the Sun",
+    info:"NASA's Solar Dynamics Observatory stares unblinking at the Sun in extreme ultraviolet light. Here, days of solar activity — looping magnetic arcs and shifting active regions — are compressed into minutes.",
+    url:"https://svs.gsfc.nasa.gov/vis/a000000/a005600/a005649/AIA.0171A-Frames.PSF_stamped_4096p30.mp4" },
+
+  { type:"video",
+    kicker:"Sun · Heliophysics Fleet",
+    title:"NASA's Heliophysics Fleet, 2026",
+    info:"The armada of spacecraft NASA uses to study the Sun and its influence — from missions circling Earth to Parker Solar Probe diving through the corona itself — shown in their orbits across the inner solar system.",
+    url:"https://svs.gsfc.nasa.gov/vis/a000000/a005600/a005609/helio_fleet_2026_1080p60.mp4" },
+
+  { type:"video",
+    kicker:"Cosmos · James Webb Space Telescope",
+    title:"The Cosmic Cliffs in 3D",
+    info:"A three-dimensional journey into the 'Cosmic Cliffs' of the Carina Nebula, a star-forming region imaged by the James Webb Space Telescope — towers of gas and dust light-years tall, sculpted by the radiation of young stars.",
+    url:"https://svs.gsfc.nasa.gov/vis/a030000/a031300/a031348/Clifs-3d-STSc1080.mp4" },
+
+  { type:"video",
+    kicker:"Mars · Dust Storms",
+    title:"The Dust Storms of Mars",
+    info:"NASA missions help reveal how dust storms swirl across the Red Planet and fill the inner solar system with fine particles — a defining feature of the Martian climate.",
+    url:"https://svs.gsfc.nasa.gov/vis/a010000/a013800/a013821/YOUTUBE_1080_13821_Juno_Dust_MASTER_youtube_1080.mp4" },
+
+  { type:"video",
+    kicker:"Cosmos · Milky Way",
+    title:"A Journey Through the Galactic Plane",
+    info:"A sweeping zoom through the crowded star fields of the Milky Way toward the Carina region, previewing the vast surveys NASA's Nancy Grace Roman Space Telescope will make of our galaxy.",
+    url:"https://svs.gsfc.nasa.gov/vis/a010000/a014900/a014917/Roman_GPS_Carina_Zoom_Out_1080.mp4" },
+
+  { type:"video",
+    kicker:"Earth · City Lights",
+    title:"The Black Marble — Earth at Night",
+    info:"NASA's 'Black Marble' assembles satellite views of Earth after dark, where the glow of cities and roads traces where people live — and how human settlement has spread and brightened over time.",
+    url:"https://svs.gsfc.nasa.gov/vis/a010000/a014800/a014872/06_25_BlackMarble_FINALCUT.mp4" },
+
+  { type:"video",
+    kicker:"Earth · Land Change",
+    title:"Lake Carnegie, Seen From Orbit",
+    info:"Landsat and Sentinel-2 satellites track Lake Carnegie in Western Australia — an ephemeral lake that fills and dries with the seasons, its shape shifting dramatically across the years in this natural-color time series.",
+    url:"https://svs.gsfc.nasa.gov/vis/a010000/a015000/a015022/Lake_Carnegie_-_Natural_Color_-_Web.mp4" },
+
+  { type:"video",
+    kicker:"Climate · Carbon Dioxide",
+    title:"Carbon Dioxide Through the Ages",
+    info:"Atmospheric carbon dioxide over hundreds of thousands of years, from ancient ice-core records to today's measurements. For millennia CO₂ cycled within a stable band — until the sharp, unprecedented spike of the industrial era.",
+    url:"https://svs.gsfc.nasa.gov/vis/a000000/a005400/a005447/paleoCO2_2025-08.mp4" },
+
+  /* ---- LIVE DATA PANELS: fetched fresh each time they appear ---- */
+  { type:"apod",
+    kicker:"Cosmos · Astronomy Picture of the Day",
+    title:"Astronomy Picture of the Day",
+    info:"Loading today's featured image from NASA…",
+    dwell:30 },
+
+  { type:"iss",
+    kicker:"Live Data · Human Spaceflight",
+    title:"Where Is the Space Station Right Now?",
+    info:"The International Space Station orbits Earth roughly every 90 minutes at about 28,000 km/h. Its live ground position is plotted on the map below in real time.",
+    dwell:45 },
+
+  { type:"eonet",
+    kicker:"Live Data · Natural Events",
+    title:"Earth's Natural Events, Right Now",
+    info:"NASA's Earth Observatory Natural Event Tracker (EONET) maps active wildfires, storms, volcanoes, and floods across the planet in near-real time.",
+    dwell:40 },
+
+  { type:"countdown",
+    kicker:"Upcoming · Countdown",
+    title:"Next Eclipse · Next Launch",
+    info:"Live countdowns to the next solar or lunar eclipse and the next rocket launch anywhere on Earth.",
+    dwell:30 },
+
+  { type:"events",
+    kicker:"Upcoming · Launch Schedule",
+    title:"Upcoming Rocket Launches",
+    info:"The next launches from spaceports around the world, updated from the global launch schedule.",
+    dwell:32 },
+
+  /* ---- LIVE SURFACES: the real interactive apps the EIC wall uses ---- */
+  { type:"frame",
+    kicker:"Live Data · Interactive",
+    title:"Eyes on Earth",
+    info:"NASA's live 3D view of the Earth-observing fleet — real spacecraft positions and the latest global datasets (temperature, CO₂, sea level, and more). This is one of the interactive surfaces running in the Earth Information Center.",
+    url:"https://eyes.nasa.gov/apps/earth/",
+    dwell: 60 },
+
+  { type:"frame",
+    kicker:"Live Data · Interactive",
+    title:"Eyes on the Solar System",
+    info:"NASA's live 3D model of the solar system — real planetary positions and the current locations of NASA's spacecraft, from Voyager at the edge of interstellar space to rovers on Mars. This is one of the interactive surfaces running in the Earth Information Center.",
+    url:"https://eyes.nasa.gov/apps/solar-system/",
+    dwell: 60 },
+
+  { type:"frame",
+    kicker:"Live Data · Interactive",
+    title:"Eyes on Asteroids",
+    info:"A live 3D tracker of every known near-Earth asteroid and comet, with real orbits and the NASA missions sent to study them. This is one of the interactive surfaces running in the Earth Information Center.",
+    url:"https://eyes.nasa.gov/apps/asteroids/",
+    dwell: 60 }
+];
+
+const v = document.getElementById('v');
+const stage = document.getElementById('stage');
+const frameWrap = document.getElementById('frameWrap');
+const frame = document.getElementById('frame');
+const cap = document.getElementById('caption');
+const kickerEl = document.getElementById('kicker');
+const titleEl = document.getElementById('title');
+const infoEl = document.getElementById('info');
+const counter = document.getElementById('counter');
+const loader = document.getElementById('loader');
+const errEl = document.getElementById('err');
+const liveEl = document.getElementById('live');
+const panel = document.getElementById('panel');
+
+let idx = 0, frameTimer = null, frameStuck = null, frameOk = false;
+let videoStuck = null, consecutiveFails = 0, focusGuard = null;
+let liveActive = false, liveRecheck = null, livePoll = null, suppressLiveUntil = 0;
+let panelTimer = null, issInterval = null, tickInterval = null, curType = null;
+let launchCache = { t:0, data:null };
+
+// Clear every timer/interval any surface might have running before switching.
+function clearAllTimers(){
+  clearTimeout(frameTimer); clearTimeout(frameStuck); clearTimeout(videoStuck);
+  clearTimeout(panelTimer); clearInterval(focusGuard);
+  clearInterval(issInterval); clearInterval(tickInterval);
+}
+
+// Central skip-on-failure: log to the console (visible in the terminal/devtools),
+// show a brief on-screen note, and advance so a bad fetch never freezes the wall.
+// If every item fails in a row (e.g. the network is fully down), stop hammering
+// and retry the whole loop after a short pause instead of spinning.
+function fail(reason){
+  clearAllTimers();
+  const t = (ITEMS[idx] && ITEMS[idx].title) || "item " + idx;
+  console.error("[hyperwall] " + reason + " \u2014 skipping \u201c" + t + "\u201d");
+  errEl.textContent = reason + " \u2014 skipping.";
+  consecutiveFails++;
+  if (consecutiveFails >= ITEMS.length){
+    console.error("[hyperwall] all " + ITEMS.length + " items failed in a row \u2014 pausing 15s before retrying.");
+    errEl.textContent = "No data reachable \u2014 retrying shortly\u2026";
+    setTimeout(()=>{ consecutiveFails = 0; next(); }, 15000);
+    return;
+  }
+  next();
+}
+
+function setCaption(it){
+  kickerEl.textContent = it.kicker || "";
+  titleEl.textContent = it.title || "";
+  infoEl.textContent = it.info || "";
+  counter.textContent = (idx+1) + " / " + ITEMS.length;
+}
+
+function showCaptionTemporarily(ms){
+  cap.classList.remove('hidden');
+  clearTimeout(window._capT);
+  window._capT = setTimeout(()=>cap.classList.add('hidden'), ms || 9000);
+}
+
+function show(i){
+  idx = i;
+  clearAllTimers();
+  const it = ITEMS[i];
+  curType = it.type;
+  // Reset every surface, stop stray audio, and clear the previous iframe.
+  stage.style.display = 'none';
+  frameWrap.style.display = 'none';
+  panel.style.display = 'none';
+  panel.innerHTML = '';
+  try { v.pause(); } catch(e){}
+  if (it.type !== 'frame') frame.src = 'about:blank';
+  loader.style.display = 'none';
+  liveEl.style.display = 'none';
+  errEl.textContent = '';
+  setCaption(it);
+  document.getElementById('credit').textContent = "NASA's Scientific Visualization Studio · Public Domain";
+
+  switch (it.type){
+    case 'video':     return showVideo(it);
+    case 'frame':     return showFrame(it);
+    case 'iss':       return showISS(it);
+    case 'eonet':     return showEONET(it);
+    case 'apod':      return showAPOD(it);
+    case 'countdown': return showCountdown(it);
+    case 'events':    return showEvents(it);
+    default:          return showVideo(it);
+  }
+}
+
+function showVideo(it){
+  stage.style.display = 'flex';
+  // Daily-updated files: append a cache-buster so the TV always pulls
+  // today's version instead of a stale cached copy. Timeless films load plain.
+  liveEl.style.display = it.daily ? 'block' : 'none';
+  v.src = it.daily ? (it.url + "?t=" + Date.now()) : it.url;
+  v.load();
+  const p = v.play(); if (p) p.catch(()=>{});
+  showCaptionTemporarily(9000);
+  // Watchdog: if a video neither loads nor fires 'error' (e.g. a mid-run
+  // network drop that just hangs the request) skip it so the wall never stalls.
+  videoStuck = setTimeout(()=>{ if (v.readyState < 2) fail("Timed out fetching: " + it.title); }, 15000);
+}
+
+function showFrame(it){
+  frameWrap.style.display = 'block';
+  liveEl.style.display = 'block';
+  frameOk = false;
+  frame.src = it.url;
+  showCaptionTemporarily(11000);
+  // If a live app refuses to be embedded (X-Frame-Options / CSP frame-ancestors)
+  // the iframe never fires 'load' and would sit black forever — bail to the next.
+  frameStuck = setTimeout(()=>{ if (!frameOk) fail("Live panel blocked embedding: " + it.title); }, 8000);
+  // Keep keyboard focus on the page so the arrow keys always work; mouse is unaffected.
+  frame.blur(); window.focus();
+  focusGuard = setInterval(()=>{ if (document.activeElement === frame){ frame.blur(); window.focus(); } }, 350);
+  // Interactive panels never "end": advance after the dwell of no interaction (wake() resets it).
+  frameTimer = setTimeout(next, (it.dwell ? it.dwell*1000 : IDLE_ADVANCE_MS));
+}
+
+// Equirectangular map helpers -------------------------------------------------
+function lonToPct(lon){ return (lon + 180) / 360 * 100; }
+function latToPct(lat){ return (90 - lat) / 180 * 100; }
+function emapFrame(inner){
+  return '<div class="emap"><div class="emap-frame">'
+    + '<img src="' + EARTH_IMG + '" alt="" onerror="this.style.display=&#39;none&#39;">'
+    + (inner || '') + '</div></div>';
+}
+
+// Live ISS ground track -------------------------------------------------------
+function showISS(it){
+  panel.style.display = 'block';
+  liveEl.style.display = 'block';
+  panel.innerHTML = emapFrame('<div class="iss-dot" id="issDot" style="display:none"></div>')
+    + '<div class="iss-stats" id="issStats">Acquiring signal…</div>';
+  showCaptionTemporarily(11000);
+  const dot = document.getElementById('issDot');
+  const stats = document.getElementById('issStats');
+  async function upd(){
+    try {
+      const r = await fetch('https://api.wheretheiss.at/v1/satellites/25544');
+      if (!r.ok) throw 0;
+      const d = await r.json();
+      dot.style.left = lonToPct(d.longitude) + '%';
+      dot.style.top  = latToPct(d.latitude) + '%';
+      dot.style.display = 'block';
+      stats.innerHTML = 'LAT ' + d.latitude.toFixed(2) + '\u00b0  LON ' + d.longitude.toFixed(2) + '\u00b0'
+        + '<br>ALT ' + Math.round(d.altitude) + ' km  \u00b7  SPEED ' + Math.round(d.velocity).toLocaleString() + ' km/h';
+      errEl.textContent = ''; consecutiveFails = 0;
+    } catch(e){ /* transient network hiccup — keep the last known position */ }
+  }
+  upd();
+  issInterval = setInterval(upd, 3000);
+  panelTimer = setTimeout(next, (it.dwell ? it.dwell*1000 : 45000));
+}
+
+// Live EONET natural-event map ------------------------------------------------
+async function showEONET(it){
+  panel.style.display = 'block';
+  liveEl.style.display = 'block';
+  panel.innerHTML = emapFrame('<div id="eonetPts"></div>') + '<div class="eonet-legend" id="eonetLegend"></div>';
+  showCaptionTemporarily(12000);
+  try {
+    const r = await fetch('https://eonet.gsfc.nasa.gov/api/v3/events?status=open&limit=150');
+    if (!r.ok) throw 0;
+    const d = await r.json();
+    const pts = document.getElementById('eonetPts');
+    const counts = {};
+    (d.events || []).forEach(ev => {
+      const g = ev.geometry && ev.geometry[ev.geometry.length - 1];
+      if (!g || !g.coordinates) return;
+      let lon, lat;
+      if (g.type === 'Point'){ lon = g.coordinates[0]; lat = g.coordinates[1]; }
+      else { const c = g.coordinates[0][0]; lon = c[0]; lat = c[1]; }
+      if (typeof lon !== 'number' || typeof lat !== 'number') return;
+      const cat = (ev.categories && ev.categories[0]) || {};
+      const color = EONET_COLORS[cat.id] || EONET_COLORS.default;
+      counts[cat.title || 'Other'] = (counts[cat.title || 'Other'] || 0) + 1;
+      const el = document.createElement('div');
+      el.className = 'eonet-pt';
+      el.style.left = lonToPct(lon) + '%';
+      el.style.top  = latToPct(lat) + '%';
+      el.style.background = color;
+      el.title = ev.title || '';
+      pts.appendChild(el);
+    });
+    const leg = document.getElementById('eonetLegend');
+    if (leg) leg.innerHTML = Object.keys(counts).sort((a,b)=>counts[b]-counts[a])
+      .map(k => '<span>' + k + ' \u00b7 ' + counts[k] + '</span>').join('');
+    infoEl.textContent = (d.events ? d.events.length : 0)
+      + " natural events are happening right now, tracked by NASA's Earth Observatory \u2014 wildfires, storms, volcanoes, floods and more.";
+    errEl.textContent = ''; consecutiveFails = 0;
+  } catch(e){ return fail("Couldn't load EONET events"); }
+  panelTimer = setTimeout(next, (it.dwell ? it.dwell*1000 : 40000));
+}
+
+// Astronomy Picture of the Day ------------------------------------------------
+async function showAPOD(it){
+  panel.style.display = 'block';
+  showCaptionTemporarily(14000);
+  try {
+    const r = await fetch('https://api.nasa.gov/planetary/apod?thumbs=true&api_key=' + NASA_API_KEY);
+    if (!r.ok) throw 0;
+    const d = await r.json();
+    kickerEl.textContent = 'Astronomy Picture of the Day \u00b7 ' + (d.date || '');
+    titleEl.textContent  = d.title || 'Astronomy Picture of the Day';
+    const exp = d.explanation || '';
+    infoEl.textContent = exp.length > 600 ? exp.slice(0, 600) + '\u2026' : exp;
+    document.getElementById('credit').textContent = d.copyright ? ('\u00a9 ' + d.copyright.trim()) : 'NASA \u00b7 Public Domain';
+    if (d.media_type === 'image'){
+      const src = d.hdurl || d.url;
+      panel.innerHTML = '<div class="apod-img" style="background-image:url(&#39;' + src + '&#39;)"></div>';
+    } else {
+      // APOD video: hand off to the iframe
+      panel.style.display = 'none';
+      frameWrap.style.display = 'block';
+      frameOk = false;
+      frame.src = d.url;
+      frameStuck = setTimeout(()=>{ if (!frameOk) fail("APOD video blocked embedding"); }, 8000);
+      frame.blur(); window.focus();
+      focusGuard = setInterval(()=>{ if (document.activeElement === frame){ frame.blur(); window.focus(); } }, 350);
+    }
+    errEl.textContent = ''; consecutiveFails = 0;
+  } catch(e){ return fail("Couldn't load APOD"); }
+  panelTimer = setTimeout(next, (it.dwell ? it.dwell*1000 : 30000));
+}
+
+// Shared upcoming-launch fetch (cached ~20 min to respect API rate limits) -----
+async function getLaunches(){
+  if (launchCache.data && (Date.now() - launchCache.t) < 20*60*1000) return launchCache.data;
+  const r = await fetch('https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=8');
+  if (!r.ok) throw new Error('launch fetch ' + r.status);
+  const d = await r.json();
+  launchCache = { t: Date.now(), data: d.results || [] };
+  return launchCache.data;
+}
+
+function fmtCountdown(ms){
+  if (ms < 0) ms = 0;
+  const s = Math.floor(ms / 1000);
+  const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600),
+        m = Math.floor(s % 3600 / 60), ss = s % 60;
+  return d + 'd ' + String(h).padStart(2,'0') + 'h ' + String(m).padStart(2,'0') + 'm ' + String(ss).padStart(2,'0') + 's';
+}
+function eclipseTime(e){ return new Date(e.date + 'T' + (e.time || '00:00') + ':00Z').getTime(); }
+function nextEclipse(){
+  const now = Date.now();
+  for (const e of ECLIPSES){ if (eclipseTime(e) > now) return e; }
+  return null;
+}
+
+// Next eclipse + next launch, both ticking live -------------------------------
+async function showCountdown(it){
+  panel.style.display = 'block';
+  showCaptionTemporarily(12000);
+  const ecl = nextEclipse();
+  let launch = null;
+  try { const ls = await getLaunches(); launch = ls && ls[0]; } catch(e){ /* show eclipse only */ }
+  const prov = launch && launch.launch_service_provider && launch.launch_service_provider.name || '';
+  panel.innerHTML = '<div class="cd-wrap">'
+    + '<div class="cd-card"><div class="cd-k">Next Eclipse</div>'
+      + '<div class="cd-t">' + (ecl ? ecl.name : '\u2014') + '</div>'
+      + '<div class="cd-when">' + (ecl ? ecl.label : '') + '</div>'
+      + '<div class="cd-num" id="cdEcl">\u2014</div></div>'
+    + '<div class="cd-card"><div class="cd-k">Next Launch</div>'
+      + '<div class="cd-t">' + (launch ? launch.name : 'Schedule unavailable') + '</div>'
+      + '<div class="cd-when">' + prov + '</div>'
+      + '<div class="cd-num" id="cdLaunch">' + (launch ? '\u2014' : '') + '</div></div>'
+    + '</div>';
+  const eclT = ecl ? eclipseTime(ecl) : null;
+  const lT = launch && launch.net ? new Date(launch.net).getTime() : null;
+  function tick(){
+    const a = document.getElementById('cdEcl');
+    const b = document.getElementById('cdLaunch');
+    if (a && eclT) a.textContent = fmtCountdown(eclT - Date.now());
+    if (b && lT)   b.textContent = fmtCountdown(lT - Date.now());
+  }
+  tick();
+  tickInterval = setInterval(tick, 1000);
+  panelTimer = setTimeout(next, (it.dwell ? it.dwell*1000 : 30000));
+}
+
+// Upcoming launch schedule ----------------------------------------------------
+async function showEvents(it){
+  panel.style.display = 'block';
+  showCaptionTemporarily(12000);
+  let ls;
+  try { ls = await getLaunches(); } catch(e){ return fail("Couldn't load launch schedule"); }
+  if (!ls || !ls.length) return fail("No upcoming launches");
+  const rows = ls.slice(0, 6).map(l => {
+    const dt = l.net ? new Date(l.net) : null;
+    const when = dt ? dt.toLocaleString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : 'TBD';
+    const prov = (l.launch_service_provider && l.launch_service_provider.name) || '';
+    return '<div class="ev-row"><div class="ev-when">' + when + '</div>'
+      + '<div class="ev-name">' + (l.name || '') + '</div>'
+      + '<div class="ev-prov">' + prov + '</div></div>';
+  }).join('');
+  panel.innerHTML = '<div class="ev-wrap"><div class="ev-h">Upcoming Launches</div>' + rows + '</div>';
+  errEl.textContent = ''; consecutiveFails = 0;
+  panelTimer = setTimeout(next, (it.dwell ? it.dwell*1000 : 32000));
+}
+
+v.addEventListener('loadeddata', ()=>{
+  clearTimeout(videoStuck);
+  loader.style.display='none'; errEl.textContent=''; consecutiveFails=0;
+  showCaptionTemporarily(9000);
+});
+v.addEventListener('ended', next);
+v.addEventListener('error', ()=>{ fail("Couldn't load: " + ITEMS[idx].title); });
+
+// A live iframe reported a successful load — cancel the embed-block fallback.
+frame.addEventListener('load', ()=>{ frameOk = true; clearTimeout(frameStuck); errEl.textContent=''; consecutiveFails=0; try{ window.focus(); }catch(e){} });
+
+// ---- NASA live-stream detection & auto-switch ----------------------------
+// Ask the YouTube Data API whether any configured NASA channel is broadcasting
+// live right now. Returns the live video's id/title, or null.
+async function fetchNasaLive(){
+  if (!YT_API_KEY) return null;
+  for (const id of NASA_CHANNELS){
+    try {
+      const u = "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video"
+              + "&eventType=live&channelId=" + id + "&key=" + YT_API_KEY;
+      const r = await fetch(u);
+      if (!r.ok) continue;
+      const j = await r.json();
+      if (j.items && j.items.length){
+        const it = j.items[0];
+        return { videoId: it.id.videoId, title: it.snippet.title, channel: it.snippet.channelTitle };
+      }
+    } catch(e){ /* network hiccup — ignore this channel and try the next */ }
+  }
+  return null;
+}
+
+// Take over the wall with the NASA live broadcast.
+function showLive(live){
+  liveActive = true;
+  clearAllTimers();
+  try { v.pause(); }catch(e){}
+  v.removeAttribute('src'); v.load();
+  stage.style.display = 'none';
+  loader.style.display = 'none';
+  frameWrap.style.display = 'block';
+  liveEl.style.display = 'block';
+  kickerEl.textContent = "LIVE NOW · " + (live.channel || "NASA");
+  titleEl.textContent  = live.title || "NASA Live";
+  infoEl.textContent   = "NASA is broadcasting live. The wall switched to the stream automatically and will return to the visualization loop when the broadcast ends. Press \u2192 to dismiss.";
+  counter.textContent  = "";
+  frame.src = "https://www.youtube.com/embed/" + live.videoId + "?autoplay=1&mute=1&playsinline=1";
+  showCaptionTemporarily(12000);
+  // Keep keyboard focus on the page so \u2192 can dismiss the stream.
+  frame.blur(); window.focus();
+  focusGuard = setInterval(()=>{ if (document.activeElement === frame){ frame.blur(); window.focus(); } }, 350);
+  // Confirm the broadcast is still live; when it ends, resume the loop.
+  clearInterval(liveRecheck);
+  liveRecheck = setInterval(async ()=>{ if (!(await fetchNasaLive())) endLive(); }, LIVE_RECHECK_MS);
+}
+
+// Broadcast ended (or dismissed): drop the stream and resume normal rotation.
+function endLive(){
+  liveActive = false;
+  clearInterval(liveRecheck); clearInterval(focusGuard);
+  frame.src = "about:blank";
+  next();
+}
+
+// User manually skipped the live stream: don't auto-switch back for a while.
+function dismissLive(){ suppressLiveUntil = Date.now() + LIVE_COOLDOWN_MS; endLive(); }
+
+// Periodic poll: switch to the stream the moment NASA goes live.
+async function pollLive(){
+  if (liveActive || Date.now() < suppressLiveUntil) return;
+  const live = await fetchNasaLive();
+  if (live && !liveActive) showLive(live);
+}
+
+// Load API keys from a .env file served next to this page (KEY=VALUE lines).
+// Requires being served over http(s); when opened via file:// the fetch fails
+// and the inline defaults above are used instead.
+async function loadEnv(){
+  try {
+    const r = await fetch('.env', { cache:'no-store' });
+    if (!r.ok) return;
+    (await r.text()).split(/\r?\n/).forEach(line=>{
+      line = line.trim();
+      if (!line || line[0] === '#') return;
+      const eq = line.indexOf('=');
+      if (eq < 0) return;
+      const key = line.slice(0, eq).trim();
+      const val = line.slice(eq + 1).trim().replace(/^["']|["']$/g, '');
+      if (key === 'YT_API_KEY') YT_API_KEY = val;
+      else if (key === 'NASA_API_KEY' && val) NASA_API_KEY = val;
+    });
+  } catch(e){ /* no .env (or opened via file://) — use inline defaults */ }
+}
+
+// Crossfade helper: fade the current surface out, swap, then fade the new one in.
+const FADE_MS = 600;
+let fading = false;
+function go(i){
+  if (liveActive) return;
+  if (fading){ show(i); return; }   // mid-fade rapid skip: swap immediately
+  fading = true;
+  document.body.classList.add('fade-out');
+  setTimeout(()=>{
+    show(i);
+    // Paint the new surface at opacity 0, then release the class to fade it in.
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      document.body.classList.remove('fade-out');
+      fading = false;
+    }));
+  }, FADE_MS);
+}
+
+function next(){ if (liveActive) return; go((idx+1) % ITEMS.length); }
+function prev(){ if (liveActive) return; go((idx-1+ITEMS.length) % ITEMS.length); }
+
+const IDLE_ADVANCE_MS = 30000;
+let idleT;
+function wake(){
+  document.body.classList.remove('idle');
+  clearTimeout(idleT);
+  idleT = setTimeout(()=>document.body.classList.add('idle'), 4000);
+  // On live interactive panels, restart the "no interaction" countdown instead
+  // of popping the caption back up — so you can keep clicking around.
+  if (curType === 'frame'){
+    clearTimeout(frameTimer);
+    frameTimer = setTimeout(next, IDLE_ADVANCE_MS);
+  }
+}
+document.addEventListener('mousemove', wake);
+document.addEventListener('touchstart', wake);
+document.addEventListener('click', (e)=>{
+  // don't hijack clicks meant for a live iframe \u2014 just reset its idle countdown
+  if (frameWrap.style.display === 'block'){ wake(); return; }
+  next();
+});
+document.addEventListener('keydown', (e)=>{
+  if (e.key==='ArrowRight'){ if (liveActive) dismissLive(); else next(); }
+  else if (e.key==='ArrowLeft'){ if (liveActive) dismissLive(); else prev(); }
+  else if (e.key==='ArrowUp'){ clearTimeout(window._capT); cap.classList.remove('hidden'); }
+  else if (e.key==='ArrowDown'){ clearTimeout(window._capT); cap.classList.add('hidden'); }
+  else if (e.key==='f'){
+    if(!document.fullscreenElement) document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
+  }
+});
+
+show(0);
+
+// Load .env keys, then start NASA live-stream detection (no-op unless YT_API_KEY is set).
+loadEnv().then(()=>{
+  if (YT_API_KEY){
+    pollLive();
+    livePoll = setInterval(pollLive, LIVE_POLL_MS);
+  }
+});
+</script>
+</body>
+</html>
