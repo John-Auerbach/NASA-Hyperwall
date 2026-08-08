@@ -88,6 +88,8 @@
   .ev-when { width:200px; color:#8b98a6; font-size:18px; font-variant-numeric:tabular-nums; }
   .ev-name { flex:1; font-size:24px; font-weight:600; color:#eef3f8; }
   .ev-prov { color:#9aa7b4; font-size:16px; text-align:right; }
+  .ev-type { flex:none; min-width:118px; text-align:right; font-size:14px; font-weight:600; letter-spacing:1px;
+    text-transform:uppercase; color:#8fd0a8; }
 
   /* ---- news dashboard slide ---- */
   .news-dash { position:absolute; inset:0; display:flex; gap:38px; padding:7% 6% 12%; }
@@ -131,7 +133,7 @@
     <div id="info"></div>
     <div id="credit">NASA's Scientific Visualization Studio · Public Domain</div>
   </div>
-  <div id="help">tap/→ skip · ← back · f fullscreen</div>
+  <div id="help">tap/→ skip · ← back · f fullscreen · s live</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/5.0.0/satellite.min.js"></script>
 <script>
@@ -184,6 +186,12 @@ const ITEMS = [
     info:"A live dashboard of the biggest space and science stories right now, aggregated from major newsrooms and refreshed on every loop.",
     dwell:32 },
 
+  { type:"schedule",
+    kicker:"Upcoming · Mission Schedule",
+    title:"Upcoming Spaceflight Events",
+    info:"Scheduled spacewalks, dockings, flybys, and other mission milestones from around the world, updated from the global spaceflight calendar.",
+    dwell:32 },
+
   { type:"events",
     kicker:"Upcoming · Launch Schedule",
     title:"Upcoming Rocket Launches",
@@ -222,7 +230,7 @@ const ITEMS = [
 
   { type:"video",
     kicker:"Cryosphere · Arctic",
-    title:"Arctic Sea Ice Maximum — 2026",
+    title:"Arctic Sea Ice Maximum, 2026",
     info:"The Arctic Ocean's floating ice cap reaches its yearly maximum extent. Satellite records show the winter maximum shrinking over the decades, a clear marker of a warming polar climate.",
     url:"https://svs.gsfc.nasa.gov/vis/a000000/a005600/a005629/arctic_sea_ice_2026_max_2160p60.mp4" },
 
@@ -247,7 +255,7 @@ const ITEMS = [
 
   { type:"video",
     kicker:"Sun · Heliophysics Fleet",
-    title:"NASA's Heliophysics Fleet — 2026",
+    title:"NASA's Heliophysics Fleet, 2026",
     info:"The fleet of spacecraft NASA uses to study the Sun and its influence, from missions circling Earth to Parker Solar Probe diving through the corona itself, shown in their orbits across the inner solar system.",
     url:"https://svs.gsfc.nasa.gov/vis/a000000/a005600/a005609/helio_fleet_2026_1080p60.mp4" },
 
@@ -365,6 +373,7 @@ let videoStuck = null, consecutiveFails = 0, focusGuard = null;
 let liveActive = false, liveRecheck = null, livePoll = null, suppressLiveUntil = 0;
 let panelTimer = null, issInterval = null, tickInterval = null, curType = null;
 let launchCache = { t:0, data:null };
+let eventCache = { t:0, data:null };
 let apodCache = { t:0, data:null };
 let gen = 0;   // bumped on every show(); async panels bail if it changes mid-fetch
 
@@ -432,6 +441,7 @@ function show(i){
     case 'iss':       return showISS(it);
     case 'apod':      return showAPOD(it);
     case 'events':    return showEvents(it);
+    case 'schedule':  return showSchedule(it);
     case 'news':      return showNews(it);
     default:          return showVideo(it);
   }
@@ -546,7 +556,7 @@ async function showISS(it){
     + '<div class="iss-legend"><span class="lg lg-p">Ground track</span>'
     +   '<span class="lg lg-f">Predicted orbit</span><span class="lg lg-n">Night side</span></div>';
   showCaptionTemporarily(11000);
-  reveal();
+  revealWhenReady(g);
 
   const dot   = document.getElementById('issDot');
   const stats = document.getElementById('issStats');
@@ -692,14 +702,22 @@ async function showAPOD(it){
 }
 
 // Shared upcoming-launch fetch (cached ~20 min to respect API rate limits) -----
+// Uses the lldev instance, which is far less aggressively throttled than the
+// production host. On any error, serve the last good data instead of skipping.
 async function getLaunches(){
   if (launchCache.data && (Date.now() - launchCache.t) < 20*60*1000) return launchCache.data;
-  const r = await fetch('https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=8');
-  if (!r.ok) throw new Error('launch fetch ' + r.status);
-  const d = await r.json();
-  launchCache = { t: Date.now(), data: d.results || [] };
-  return launchCache.data;
+  try {
+    const d = await fetchJSON('https://lldev.thespacedevs.com/2.2.0/launch/upcoming/?limit=8', 8000);
+    launchCache = { t: Date.now(), data: d.results || [] };
+    return launchCache.data;
+  } catch(e){
+    if (launchCache.data) return launchCache.data;
+    throw e;
+  }
 }
+
+// Warm the launch cache at startup so the slide has data by the time it appears.
+function preloadLaunches(){ getLaunches().catch(()=>{}); }
 
 // Upcoming launch schedule ----------------------------------------------------
 async function showEvents(it){
@@ -719,7 +737,46 @@ async function showEvents(it){
       + '<div class="ev-prov">' + prov + '</div></div>';
   }).join('');
   panel.innerHTML = '<div class="ev-wrap"><div class="ev-h">Upcoming Launches</div>' + rows + '</div>';
-  reveal();
+  revealWhenReady(g);
+  errEl.textContent = ''; consecutiveFails = 0;
+  panelTimer = setTimeout(next, (it.dwell ? it.dwell*1000 : 32000));
+}
+
+// Shared upcoming-events fetch (spacewalks, dockings, flybys, etc.) ------------
+async function getEvents(){
+  if (eventCache.data && (Date.now() - eventCache.t) < 20*60*1000) return eventCache.data;
+  try {
+    const d = await fetchJSON('https://lldev.thespacedevs.com/2.2.0/event/upcoming/?limit=12', 8000);
+    eventCache = { t: Date.now(), data: d.results || [] };
+    return eventCache.data;
+  } catch(e){
+    if (eventCache.data) return eventCache.data;
+    throw e;
+  }
+}
+
+// Warm the events cache at startup so the slide has data by the time it appears.
+function preloadEvents(){ getEvents().catch(()=>{}); }
+
+// Upcoming mission-event schedule (EVAs, dockings, flybys, celestial events) ---
+async function showSchedule(it){
+  const g = gen;
+  panel.style.display = 'block';
+  showCaptionTemporarily(12000);
+  let evs;
+  try { evs = await getEvents(); } catch(e){ if (g !== gen) return; return fail("Couldn't load events schedule"); }
+  if (g !== gen) return;
+  if (!evs || !evs.length) return fail("No upcoming events");
+  const rows = evs.slice(0, 6).map(e => {
+    const dt = e.date ? new Date(e.date) : null;
+    const when = dt ? dt.toLocaleString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : 'TBD';
+    const type = (e.type && e.type.name) || '';
+    return '<div class="ev-row"><div class="ev-when">' + when + '</div>'
+      + '<div class="ev-name">' + escapeHtml(e.name || '') + '</div>'
+      + '<div class="ev-type">' + escapeHtml(type) + '</div></div>';
+  }).join('');
+  panel.innerHTML = '<div class="ev-wrap"><div class="ev-h">Upcoming Spaceflight Events</div>' + rows + '</div>';
+  revealWhenReady(g);
   errEl.textContent = ''; consecutiveFails = 0;
   panelTimer = setTimeout(next, (it.dwell ? it.dwell*1000 : 32000));
 }
@@ -779,7 +836,7 @@ async function showNews(it){
   panel.innerHTML = '<div class="news-dash">' + hero
     + '<div class="news-list"><div class="news-list-h">More Headlines</div>' + items + '</div></div>';
   document.getElementById('credit').textContent = 'Source: Spaceflight News API';
-  reveal();
+  revealWhenReady(g);
   errEl.textContent = ''; consecutiveFails = 0;
   panelTimer = setTimeout(next, (it.dwell ? it.dwell*1000 : 30000));
 }
@@ -821,17 +878,25 @@ async function fetchNasaLive(){
 function showLive(live){
   liveActive = true;
   clearAllTimers();
+  clearTimeout(fadeTimer); fadeTimer = null; fading = false;   // cancel any in-flight crossfade
   try { v.pause(); }catch(e){}
   v.removeAttribute('src'); v.load();
   stage.style.display = 'none';
   loader.style.display = 'none';
+  panel.style.display = 'none';                 // hide any live-data panel so it can't cover the stream
+  panel.innerHTML = '';
   frameWrap.style.display = 'block';
   liveEl.style.display = 'block';
+  document.body.classList.remove('fade-out');   // reveal immediately if a crossfade was mid-flight
   kickerEl.textContent = "LIVE NOW · " + (live.channel || "NASA");
   titleEl.textContent  = live.title || "NASA Live";
   infoEl.textContent   = "NASA is broadcasting live. The wall switched to the stream automatically and will return to the visualization loop when the broadcast ends. Press \u2192 to dismiss.";
   counter.textContent  = "";
-  frame.src = "https://www.youtube.com/embed/" + live.videoId + "?autoplay=1&mute=1&playsinline=1";
+  // YouTube blocks embeds with a missing referrer (Error 153); passing origin
+  // lets it play when the wall is served over http(s). A file:// page has a
+  // "null" origin, so the stream can only embed when the page is served.
+  frame.src = "https://www.youtube.com/embed/" + live.videoId
+    + "?autoplay=1&mute=1&playsinline=1&origin=" + encodeURIComponent(location.origin);
   showCaptionTemporarily(12000);
   // Keep keyboard focus on the page so \u2192 can dismiss the stream.
   frame.blur(); window.focus();
@@ -841,16 +906,26 @@ function showLive(live){
   liveRecheck = setInterval(async ()=>{ if (!(await fetchNasaLive())) endLive(); }, LIVE_RECHECK_MS);
 }
 
-// Broadcast ended (or dismissed): drop the stream and resume normal rotation.
+// Broadcast ended (or dismissed): drop the stream and resume from the headlines.
 function endLive(){
   liveActive = false;
   clearInterval(liveRecheck); clearInterval(focusGuard);
   frame.src = "about:blank";
-  next();
+  go(0);
 }
 
 // User manually skipped the live stream: don't auto-switch back for a while.
 function dismissLive(){ suppressLiveUntil = Date.now() + LIVE_COOLDOWN_MS; endLive(); }
+
+// Manually jump to the NASA live stream if one is currently broadcasting.
+async function requestLive(){
+  if (liveActive) return;
+  suppressLiveUntil = 0;                       // user asked for it: clear any skip cooldown
+  const live = await fetchNasaLive();
+  if (live){ showLive(live); return; }
+  errEl.textContent = YT_API_KEY ? "No NASA live stream right now." : "Live detection is off (no YouTube API key).";
+  setTimeout(()=>{ if (!liveActive) errEl.textContent = ''; }, 4000);
+}
 
 // Periodic poll: switch to the stream the moment NASA goes live.
 async function pollLive(){
@@ -884,28 +959,49 @@ async function loadEnv(){
 // (video first frame, iframe load, or fetched panel HTML). A safety timeout
 // reveals the slide anyway so a slow feed can never leave the wall blank.
 const FADE_MS = 600;
-let fading = false, revealFallback = null;
+let fading = false, revealFallback = null, fadeTimer = null, pendingIdx = null;
 function go(i){
   if (liveActive) return;
-  if (fading){ show(i); return; }   // mid-fade rapid skip: swap immediately
+  pendingIdx = i;
+  clearTimeout(revealFallback);
+  document.body.classList.add('fade-out');   // always fade the current slide out first
+  if (fadeTimer) return;                      // a fade-out is already counting down; it will land on the latest target
   fading = true;
-  document.body.classList.add('fade-out');
-  setTimeout(()=>{
-    show(i);
-    clearTimeout(revealFallback);
-    revealFallback = setTimeout(reveal, 4000);
+  fadeTimer = setTimeout(()=>{
+    fadeTimer = null;
+    show(pendingIdx);                          // swap in while still invisible
+    revealFallback = setTimeout(reveal, 4000); // safety: never leave the wall blank
   }, FADE_MS);
 }
 
 // Fade the freshly prepared slide in. Each surface calls this once its content
 // is ready; the double rAF lets the browser paint it at opacity 0 first.
+// Ignored while a fade-out is still counting down so a slide can't reveal early.
 function reveal(){
   clearTimeout(revealFallback);
-  if (!fading) return;
+  if (!fading || fadeTimer) return;
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     document.body.classList.remove('fade-out');
     fading = false;
   }));
+}
+
+// Hold the fade until every image in the panel (both <img> tags and CSS
+// background-image URLs) has finished decoding, so nothing pops in after the
+// crossfade. A short cap reveals anyway so one slow thumbnail can't stall.
+function revealWhenReady(g, maxWait){
+  const imgs = Array.from(panel.querySelectorAll('img'));
+  panel.querySelectorAll('[style*="background-image"]').forEach(node => {
+    const m = /url\((['"]?)(.*?)\1\)/.exec(node.getAttribute('style') || '');
+    if (m && m[2]){ const im = new Image(); im.src = m[2]; imgs.push(im); }
+  });
+  const waits = imgs.map(im => (im.complete && im.naturalWidth)
+    ? Promise.resolve()
+    : new Promise(res => { im.addEventListener('load', res, { once:true }); im.addEventListener('error', res, { once:true }); }));
+  let done = false;
+  const finish = ()=>{ if (done) return; done = true; if (g === gen) reveal(); };
+  Promise.all(waits).then(finish);
+  setTimeout(finish, maxWait || 2500);
 }
 
 function next(){ if (liveActive) return; go((idx+1) % ITEMS.length); }
@@ -940,6 +1036,7 @@ document.addEventListener('keydown', (e)=>{
     if(!document.fullscreenElement) document.documentElement.requestFullscreen();
     else document.exitFullscreen();
   }
+  else if (e.key==='s' || e.key==='S'){ requestLive(); }
 });
 
 show(0);
@@ -947,6 +1044,8 @@ show(0);
 // Load .env keys, then warm APOD and start NASA live-stream detection.
 loadEnv().then(()=>{
   preloadAPOD();
+  preloadLaunches();
+  preloadEvents();
   if (YT_API_KEY){
     pollLive();
     livePoll = setInterval(pollLive, LIVE_POLL_MS);
