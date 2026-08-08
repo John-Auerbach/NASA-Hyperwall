@@ -110,8 +110,8 @@
   .news-item-meta { font-size:13px; color:#8b98a6; margin-top:5px; letter-spacing:.5px; }
 
   /* ---- crossfade between items ---- */
-  #stage, #frameWrap, #panel { transition:opacity .6s ease; }
-  body.fade-out #stage, body.fade-out #frameWrap, body.fade-out #panel { opacity:0 !important; }
+  #stage, #frameWrap, #panel { transition:opacity 1s ease; }   /* fade-in */
+  body.fade-out #stage, body.fade-out #frameWrap, body.fade-out #panel { opacity:0 !important; transition:opacity .6s ease; }   /* quicker fade-out */
 </style>
 </head>
 <body>
@@ -168,6 +168,7 @@ const NASA_CHANNELS = [
 const LIVE_POLL_MS     = 15 * 60 * 1000;     // how often to check whether NASA is live
 const LIVE_RECHECK_MS  = 3  * 60 * 1000;     // while live, how often to confirm it's still live
 const LIVE_COOLDOWN_MS = 20 * 60 * 1000;     // after you manually skip a live stream, don't auto-return for this long
+const SESSION_T = Date.now();                // one cache-buster per page load, so preloads and real loads share a URL
 
 /* ---------------------------------------------------------------
    All captions below are the VERBATIM text NASA/SVS publishes for
@@ -375,12 +376,13 @@ let panelTimer = null, issInterval = null, tickInterval = null, curType = null;
 let launchCache = { t:0, data:null };
 let eventCache = { t:0, data:null };
 let apodCache = { t:0, data:null };
+let preloadTimer = null;
 let gen = 0;   // bumped on every show(); async panels bail if it changes mid-fetch
 
 // Clear every timer/interval any surface might have running before switching.
 function clearAllTimers(){
   clearTimeout(frameTimer); clearTimeout(frameStuck); clearTimeout(videoStuck);
-  clearTimeout(panelTimer); clearInterval(focusGuard);
+  clearTimeout(panelTimer); clearInterval(focusGuard); clearTimeout(preloadTimer);
   clearInterval(issInterval); clearInterval(tickInterval);
 }
 
@@ -435,6 +437,10 @@ function show(i){
   setCaption(it);
   document.getElementById('credit').textContent = "NASA's Scientific Visualization Studio · Public Domain";
 
+  // Warm the next videos once this slide has had a moment to start loading.
+  clearTimeout(preloadTimer);
+  preloadTimer = setTimeout(preloadUpcoming, 1200);
+
   switch (it.type){
     case 'video':     return showVideo(it);
     case 'frame':     return showFrame(it);
@@ -452,13 +458,38 @@ function showVideo(it){
   // Daily-updated files: append a cache-buster so the TV always pulls
   // today's version instead of a stale cached copy. Timeless films load plain.
   liveEl.style.display = it.daily ? 'block' : 'none';
-  v.src = it.daily ? (it.url + "?t=" + Date.now()) : it.url;
+  v.src = videoURL(it);
   v.load();
   const p = v.play(); if (p) p.catch(()=>{});
   showCaptionTemporarily(9000);
   // Watchdog: if a video neither loads nor fires 'error' (e.g. a mid-run
   // network drop that just hangs the request) skip it so the wall never stalls.
   videoStuck = setTimeout(()=>{ if (v.readyState < 2) fail("Timed out fetching: " + it.title); }, 15000);
+}
+
+// Stable per-session URL for a video item (shared by playback and preloading).
+function videoURL(it){ return it.daily ? (it.url + "?t=" + SESSION_T) : it.url; }
+
+// Warm the browser cache with the next few upcoming videos so they fade in
+// instantly instead of loading on screen. Reuses a small pool of hidden,
+// muted <video> elements set to preload; each one buffers a different URL.
+const preloadPool = [];
+function preloadUpcoming(){
+  const urls = [];
+  for (let k = 1; k <= 6 && urls.length < 2; k++){
+    const it = ITEMS[(idx + k) % ITEMS.length];
+    if (it && it.type === 'video'){ const u = videoURL(it); if (!urls.includes(u)) urls.push(u); }
+  }
+  urls.forEach((u, i) => {
+    let pv = preloadPool[i];
+    if (!pv){
+      pv = document.createElement('video');
+      pv.preload = 'auto'; pv.muted = true; pv.playsInline = true; pv.style.display = 'none';
+      document.body.appendChild(pv);
+      preloadPool[i] = pv;
+    }
+    if (pv.getAttribute('src') !== u){ pv.src = u; pv.load(); }
+  });
 }
 
 function showFrame(it){
@@ -844,7 +875,7 @@ async function showNews(it){
 v.addEventListener('loadeddata', ()=>{
   clearTimeout(videoStuck);
   loader.style.display='none'; errEl.textContent=''; consecutiveFails=0;
-  reveal();
+  reveal();                                   // first frame is decoded, so fade it in
   showCaptionTemporarily(9000);
 });
 v.addEventListener('ended', next);
@@ -980,6 +1011,10 @@ function go(i){
 function reveal(){
   clearTimeout(revealFallback);
   if (!fading || fadeTimer) return;
+  // Never fade a video in before its first frame exists, or it snaps in when the
+  // frame finally decodes. loadeddata calls reveal again once it's ready; the
+  // videoStuck watchdog skips a video that never loads at all.
+  if (curType === 'video' && v.readyState < 2) return;
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     document.body.classList.remove('fade-out');
     fading = false;
