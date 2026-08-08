@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NASA Earth Information Center — Hyperwall</title>
+<title>NASA Earth Information Center · Hyperwall</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   html,body { width:100%; height:100%; background:#000; overflow:hidden;
@@ -75,8 +75,7 @@
   .eonet-legend { position:fixed; top:92px; left:34px; display:flex; flex-wrap:wrap; gap:8px 14px; max-width:60%;
     font-size:14px; color:#c3cdd7; }
   .eonet-legend span { background:rgba(0,0,0,.5); padding:5px 10px; border-radius:20px; }
-  .apod-img { position:absolute; inset:0; background-size:contain; background-position:center;
-    background-repeat:no-repeat; background-color:#000; }
+  .apod-img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#000; }
   .cd-wrap { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:64px; flex-wrap:wrap; }
   .cd-card { text-align:center; min-width:360px; }
   .cd-k { font-size:15px; letter-spacing:3px; text-transform:uppercase; color:#5fa8d3; margin-bottom:14px; }
@@ -115,7 +114,7 @@
 </head>
 <body>
   <div id="stage">
-    <div id="loader">EARTH INFORMATION CENTER — LOADING…</div>
+    <div id="loader">EARTH INFORMATION CENTER · LOADING…</div>
     <video id="v" playsinline muted preload="auto"></video>
   </div>
   <div id="frameWrap"><iframe id="frame" allow="autoplay; fullscreen"></iframe></div>
@@ -173,14 +172,39 @@ const LIVE_COOLDOWN_MS = 20 * 60 * 1000;     // after you manually skip a live s
    each piece. The ocean-currents entry is the actual Earth
    Information Center Hyperwall file (32:9, 7680x2160). Live
    surfaces are the real apps the EIC wall uses. Ordering is my
-   best sequencing — NASA does not publish the wall's exact
+   best sequencing. NASA does not publish the wall's exact
    play order.
 ----------------------------------------------------------------*/
 const ITEMS = [
 
+  /* ---- LIVE DATA PANELS: open the rotation with the day's headlines ---- */
+  { type:"news",
+    kicker:"Live Data · Headlines",
+    title:"Top Space & Science Headlines",
+    info:"A live dashboard of the biggest space and science stories right now, aggregated from major newsrooms and refreshed on every loop.",
+    dwell:32 },
+
+  { type:"events",
+    kicker:"Upcoming · Launch Schedule",
+    title:"Upcoming Rocket Launches",
+    info:"The next launches from spaceports around the world, updated from the global launch schedule.",
+    dwell:32 },
+
+  { type:"iss",
+    kicker:"Live Data · Human Spaceflight",
+    title:"Where Is the Space Station Right Now?",
+    info:"The International Space Station orbits Earth roughly every 90 minutes at about 28,000 km/h. Its live position is propagated from the latest orbital elements (TLE) with an SGP4 model. The gold line is the ground track just flown, the blue dashed line is the predicted path ahead, and the shaded region is Earth's night side.",
+    dwell:45 },
+
+  { type:"apod",
+    kicker:"Cosmos · Astronomy Picture of the Day",
+    title:"Astronomy Picture of the Day",
+    info:"Loading today's featured image from NASA…",
+    dwell:30 },
+
   { type:"video",
     kicker:"Sun · Heliophysics · Aug 12, 2026",
-    title:"Following the Shadow — August 12, 2026 Total Solar Eclipse",
+    title:"The August 12, 2026 Total Solar Eclipse",
     info:"On Wednesday, August 12, 2026, the Moon passes in front of the Sun, casting its shadow across a wide swath of Earth's Northern Hemisphere. The path of totality begins in far northern Siberia, near the North Pole, and travels south through the oceans of the Arctic and North Atlantic, passing over western Iceland (including Reykjavik) and northern Spain. The rest of Europe and parts of North America and Africa experience a partial eclipse. The red swath marks the path of totality; the black oval traveling along it is the umbra, where the Sun is completely blocked.",
     url: B+"a000000/a005600/a005656/eclipse_202608_global_2160p30.mp4" },
 
@@ -193,50 +217,50 @@ const ITEMS = [
   { type:"video", daily:true,
     kicker:"Wildfires · Updated Daily",
     title:"Global Wildfire Smoke Forecast",
-    info:"Global wildfire smoke intensity from NASA's GEOS-FP model, tracking brown carbon aerosol optical depth from yesterday through a four-day forecast. Darker areas mean more smoke in the atmospheric column — and poorer air quality. This visualization is regenerated every day; wildfire smoke can travel thousands of miles, carrying PM2.5 particles small enough to enter the bloodstream.",
+    info:"Global wildfire smoke intensity from NASA's GEOS-FP model, tracking brown carbon aerosol optical depth from yesterday through a four-day forecast. Darker areas mean more smoke in the atmospheric column and poorer air quality. This visualization is regenerated every day. Wildfire smoke can travel thousands of miles, carrying PM2.5 particles small enough to enter the bloodstream.",
     url: B+"a000000/a005600/a005624/GMAO_global_smoke_forecast_4096x2048.mp4" },
 
   { type:"video",
     kicker:"Cryosphere · Arctic",
-    title:"Arctic Sea Ice Maximum, 2026",
-    info:"The Arctic Ocean's floating ice cap reaches its yearly maximum extent. Satellite records show the winter maximum shrinking over the decades — a visible marker of a warming polar climate.",
+    title:"Arctic Sea Ice Maximum — 2026",
+    info:"The Arctic Ocean's floating ice cap reaches its yearly maximum extent. Satellite records show the winter maximum shrinking over the decades, a clear marker of a warming polar climate.",
     url:"https://svs.gsfc.nasa.gov/vis/a000000/a005600/a005629/arctic_sea_ice_2026_max_2160p60.mp4" },
 
   { type:"video",
     kicker:"Cryosphere · Antarctica",
     title:"Antarctic Ice Mass Loss, 2002–2025",
-    info:"NASA's GRACE and GRACE-FO satellites weigh Antarctica from orbit by sensing tiny changes in gravity. The animation reveals hundreds of billions of tons of ice lost each year, concentrated in the vulnerable West Antarctic — including the Thwaites 'Doomsday' Glacier.",
+    info:"NASA's GRACE and GRACE-FO satellites weigh Antarctica from orbit by sensing tiny changes in gravity. The animation reveals hundreds of billions of tons of ice lost each year, concentrated in the vulnerable West Antarctic, including the Thwaites 'Doomsday' Glacier.",
     url:"https://svs.gsfc.nasa.gov/vis/a030000/a031100/a031158/ais_200204-202503_black_1080p6.mp4" },
 
   { type:"video",
     kicker:"Climate · Global Temperature",
-    title:"Climate Spiral — Global Temperature, 1880 → Today",
-    info:"NASA's GISS global temperature record wound into a spiral: the twelve months circle around, year after year, as monthly temperature departures from the late-19th-century average widen and redden. What begins as a tight blue coil slowly swells outward into warm reds — a visceral picture of a warming planet.",
+    title:"Climate Spiral: Global Temperature, 1880 to Today",
+    info:"NASA's GISS global temperature record wound into a spiral. The twelve months circle around, year after year, as monthly temperature departures from the late-19th-century average widen and shift toward red. What begins as a tight blue coil slowly swells outward into warm reds, a clear picture of a warming planet.",
     url:"https://svs.gsfc.nasa.gov/vis/a000000/a004900/a004975/GISTEMP_Spiral_F_2160sq30.mp4" },
 
   { type:"video",
     kicker:"Ocean · EIC Hyperwall",
-    title:"Perpetual Ocean 2 — The Agulhas Current",
+    title:"Perpetual Ocean 2: The Agulhas Current",
     info:"This visualization showcases the Agulhas Current as it carries warm water along the east coast of Southern Africa. Giant spinning whirlpools called Agulhas Rings break off from this current, each one larger than many cities. These massive rings transport warm water from the Indian Ocean into the Atlantic Ocean, helping move heat around our planet and affecting global weather patterns.",
     // native EIC hyperwall resolution (3840x1080 chosen for playback; 7680x2160 also exists)
     url: B+"a000000/a005500/a005505/OceanFlows_AgulhasCurrent_3840x1080.mp4" },
 
   { type:"video",
     kicker:"Sun · Heliophysics Fleet",
-    title:"NASA's Heliophysics Fleet, 2026",
-    info:"The armada of spacecraft NASA uses to study the Sun and its influence — from missions circling Earth to Parker Solar Probe diving through the corona itself — shown in their orbits across the inner solar system.",
+    title:"NASA's Heliophysics Fleet — 2026",
+    info:"The fleet of spacecraft NASA uses to study the Sun and its influence, from missions circling Earth to Parker Solar Probe diving through the corona itself, shown in their orbits across the inner solar system.",
     url:"https://svs.gsfc.nasa.gov/vis/a000000/a005600/a005609/helio_fleet_2026_1080p60.mp4" },
 
   { type:"video",
     kicker:"Sun · Heliophysics · Space Weather",
     title:"Solar Wind Meets Earth's Magnetosphere",
-    info:"Earth's magnetosphere — the protective magnetic bubble that surrounds us — is shaped like a tadpole, streaming away from the Sun. This visualization follows the Moon as it passes in and out of that bubble over ten days, fully exposed to the solar wind whenever it is outside. Earth's magnetosphere is shown in green, magnetic field lines in orange and purple, and faint white streamlines represent the solar wind flowing past.",
+    info:"Earth's magnetosphere, the protective magnetic bubble that surrounds us, is shaped like a tadpole streaming away from the Sun. This visualization follows the Moon as it passes in and out of that bubble over ten days, fully exposed to the solar wind whenever it is outside. Earth's magnetosphere is shown in green, magnetic field lines in orange and purple, and faint white streamlines represent the solar wind flowing past.",
     url:"https://svs.gsfc.nasa.gov/vis/a000000/a005600/a005648/moonGamera_Moon_6-25-2026a_moon_wind_1080p30.mp4" },
 
   { type:"video",
     kicker:"Atmosphere · Greenhouse Gases",
     title:"Global Atmospheric Carbon Dioxide",
-    info:"A NASA model illustrates how carbon dioxide moves through Earth's atmosphere over a single year, built from OCO-2 satellite observations assimilated into NASA's GEOS model. Northern-hemisphere plants draw CO₂ down each summer through photosynthesis, then release it again in fall and winter — a planetary breath visible from space.",
+    info:"A NASA model illustrates how carbon dioxide moves through Earth's atmosphere over a single year, built from OCO-2 satellite observations assimilated into NASA's GEOS model. Northern-hemisphere plants draw CO₂ down each summer through photosynthesis, then release it again in fall and winter, like a planetary breath visible from space.",
     url: B+"a000000/a005100/a005115/TotalCO2_OCO2_1920x1080p30.mp4" },
 
   { type:"video",
@@ -248,37 +272,37 @@ const ITEMS = [
   { type:"video",
     kicker:"Solar System · Planetary Science",
     title:"Our Solar System",
-    info:"The eight planets plus Pluto, each rendered with its true planetary axial tilt — the angle that gives every world its seasons.",
+    info:"The eight planets plus Pluto, each rendered with its true axial tilt, the angle that gives every world its seasons.",
     url: B+"a030000/a030700/a030710/planets3x3_pluto_colorMercury_axis_tilt_1080p.mp4" },
 
   { type:"video",
     kicker:"Extreme Weather · Typhoons",
     title:"Super Typhoon Bavi",
-    info:"Satellite and model data reveal the towering structure of a super typhoon — among the most intense storms on Earth, drawing its energy from warm tropical seas.",
+    info:"Satellite and model data reveal the towering structure of a super typhoon, among the most intense storms on Earth, drawing its energy from warm tropical seas.",
     url:"https://svs.gsfc.nasa.gov/vis/a000000/a005600/a005662/Bavi_v22HD.mp4" },
 
   { type:"video",
     kicker:"Sun · Solar Dynamics Observatory",
     title:"Four Days of the Sun",
-    info:"NASA's Solar Dynamics Observatory stares unblinking at the Sun in extreme ultraviolet light. Here, days of solar activity — looping magnetic arcs and shifting active regions — are compressed into minutes.",
+    info:"NASA's Solar Dynamics Observatory stares unblinking at the Sun in extreme ultraviolet light. Here, days of solar activity, including looping magnetic arcs and shifting active regions, are compressed into minutes.",
     url:"https://svs.gsfc.nasa.gov/vis/a000000/a005600/a005649/AIA.0171A-Frames.PSF_stamped_4096p30.mp4" },
 
   { type:"video",
     kicker:"Sun · Heliophysics · High Definition",
     title:"Simulating Solar Flows",
-    info:"Beneath the Sun's surface, a roiling layer of super-heated plasma churns. Immense pressure and heat send tightly packed ionized atoms racing through the Sun's outer layers, twisting and tangling the magnetic field into rotating columns of plasma. This high-definition supercomputer simulation reveals that turbulent subsurface motion — measured as helicity — that drives space weather and shapes life on Earth.",
+    info:"Beneath the Sun's surface, a roiling layer of super-heated plasma churns. Immense pressure and heat send tightly packed ionized atoms racing through the Sun's outer layers, twisting and tangling the magnetic field into rotating columns of plasma. This high-definition supercomputer simulation reveals the turbulent subsurface motion, measured as helicity, that drives space weather and shapes life on Earth.",
     url:"https://svs.gsfc.nasa.gov/vis/a030000/a031400/a031400/helicity_4k_full_color.mp4" },
 
   { type:"video",
     kicker:"Cosmos · James Webb Space Telescope",
     title:"The Cosmic Cliffs in 3D",
-    info:"A three-dimensional journey into the 'Cosmic Cliffs' of the Carina Nebula, a star-forming region imaged by the James Webb Space Telescope — towers of gas and dust light-years tall, sculpted by the radiation of young stars.",
+    info:"A three-dimensional journey into the 'Cosmic Cliffs' of the Carina Nebula, a star-forming region imaged by the James Webb Space Telescope. These are towers of gas and dust light-years tall, sculpted by the radiation of young stars.",
     url:"https://svs.gsfc.nasa.gov/vis/a030000/a031300/a031348/Clifs-3d-STSc1080.mp4" },
 
   { type:"video",
     kicker:"Mars · Dust Storms",
     title:"The Dust Storms of Mars",
-    info:"NASA missions help reveal how dust storms swirl across the Red Planet and fill the inner solar system with fine particles — a defining feature of the Martian climate.",
+    info:"NASA missions help reveal how dust storms swirl across the Red Planet and fill the inner solar system with fine particles, a defining feature of the Martian climate.",
     url:"https://svs.gsfc.nasa.gov/vis/a010000/a013800/a013821/YOUTUBE_1080_13821_Juno_Dust_MASTER_youtube_1080.mp4" },
 
   { type:"video",
@@ -290,50 +314,27 @@ const ITEMS = [
   { type:"video",
     kicker:"Earth · Land Change",
     title:"Lake Carnegie, Seen From Orbit",
-    info:"Landsat and Sentinel-2 satellites track Lake Carnegie in Western Australia — an ephemeral lake that fills and dries with the seasons, its shape shifting dramatically across the years in this natural-color time series.",
+    info:"Landsat and Sentinel-2 satellites track Lake Carnegie in Western Australia, an ephemeral lake that fills and dries with the seasons. Its shape shifts dramatically across the years in this natural-color time series.",
     url:"https://svs.gsfc.nasa.gov/vis/a010000/a015000/a015022/Lake_Carnegie_-_Natural_Color_-_Web.mp4" },
 
   { type:"video",
     kicker:"Climate · Carbon Dioxide",
     title:"Carbon Dioxide Through the Ages",
-    info:"Atmospheric carbon dioxide over hundreds of thousands of years, from ancient ice-core records to today's measurements. For millennia CO₂ cycled within a stable band — until the sharp, unprecedented spike of the industrial era.",
+    info:"Atmospheric carbon dioxide over hundreds of thousands of years, from ancient ice-core records to today's measurements. For millennia CO₂ cycled within a stable band, until the sharp, unprecedented spike of the industrial era.",
     url:"https://svs.gsfc.nasa.gov/vis/a000000/a005400/a005447/paleoCO2_2025-08.mp4" },
-
-  /* ---- LIVE DATA PANELS: fetched fresh each time they appear ---- */
-  { type:"apod",
-    kicker:"Cosmos · Astronomy Picture of the Day",
-    title:"Astronomy Picture of the Day",
-    info:"Loading today's featured image from NASA…",
-    dwell:30 },
-  { type:"news",
-    kicker:"Live Data · Headlines",
-    title:"Top Space & Science Headlines",
-    info:"A live dashboard of the biggest space and science stories right now, aggregated from major newsrooms and refreshed on every loop.",
-    dwell:32 },
-  { type:"iss",
-    kicker:"Live Data · Human Spaceflight",
-    title:"Where Is the Space Station Right Now?",
-    info:"The International Space Station orbits Earth roughly every 90 minutes at about 28,000 km/h. Its live position is propagated from the latest orbital elements (TLE) with an SGP4 model — the gold line is the ground track just flown, the blue dashed line is the predicted path ahead, and the shaded region is Earth's night side.",
-    dwell:45 },
-
-  { type:"events",
-    kicker:"Upcoming · Launch Schedule",
-    title:"Upcoming Rocket Launches",
-    info:"The next launches from spaceports around the world, updated from the global launch schedule.",
-    dwell:32 },
 
   /* ---- LIVE SURFACES: the real interactive apps the EIC wall uses ---- */
   { type:"frame",
     kicker:"Live Data · Interactive",
     title:"Eyes on Earth",
-    info:"NASA's live 3D view of the Earth-observing fleet — real spacecraft positions and the latest global datasets (temperature, CO₂, sea level, and more). This is one of the interactive surfaces running in the Earth Information Center.",
+    info:"NASA's live 3D view of the Earth-observing fleet, showing real spacecraft positions and the latest global datasets such as temperature, CO₂, and sea level. This is one of the interactive surfaces running in the Earth Information Center.",
     url:"https://eyes.nasa.gov/apps/earth/",
     dwell: 60 },
 
   { type:"frame",
     kicker:"Live Data · Interactive",
     title:"Eyes on the Solar System",
-    info:"NASA's live 3D model of the solar system — real planetary positions and the current locations of NASA's spacecraft, from Voyager at the edge of interstellar space to rovers on Mars. This is one of the interactive surfaces running in the Earth Information Center.",
+    info:"NASA's live 3D model of the solar system, showing real planetary positions and the current locations of NASA's spacecraft, from Voyager at the edge of interstellar space to rovers on Mars. This is one of the interactive surfaces running in the Earth Information Center.",
     url:"https://eyes.nasa.gov/apps/solar-system/",
     dwell: 60 },
 
@@ -364,6 +365,7 @@ let videoStuck = null, consecutiveFails = 0, focusGuard = null;
 let liveActive = false, liveRecheck = null, livePoll = null, suppressLiveUntil = 0;
 let panelTimer = null, issInterval = null, tickInterval = null, curType = null;
 let launchCache = { t:0, data:null };
+let apodCache = { t:0, data:null };
 let gen = 0;   // bumped on every show(); async panels bail if it changes mid-fetch
 
 // Clear every timer/interval any surface might have running before switching.
@@ -380,12 +382,12 @@ function clearAllTimers(){
 function fail(reason){
   clearAllTimers();
   const t = (ITEMS[idx] && ITEMS[idx].title) || "item " + idx;
-  console.error("[hyperwall] " + reason + " \u2014 skipping \u201c" + t + "\u201d");
-  errEl.textContent = reason + " \u2014 skipping.";
+  console.error("[hyperwall] " + reason + ": skipping \u201c" + t + "\u201d");
+  errEl.textContent = reason + " (skipping).";
   consecutiveFails++;
   if (consecutiveFails >= ITEMS.length){
-    console.error("[hyperwall] all " + ITEMS.length + " items failed in a row \u2014 pausing 15s before retrying.");
-    errEl.textContent = "No data reachable \u2014 retrying shortly\u2026";
+    console.error("[hyperwall] all " + ITEMS.length + " items failed in a row, pausing 15s before retrying.");
+    errEl.textContent = "No data reachable, retrying shortly\u2026";
     setTimeout(()=>{ consecutiveFails = 0; next(); }, 15000);
     return;
   }
@@ -456,7 +458,7 @@ function showFrame(it){
   frame.src = it.url;
   showCaptionTemporarily(11000);
   // If a live app refuses to be embedded (X-Frame-Options / CSP frame-ancestors)
-  // the iframe never fires 'load' and would sit black forever — bail to the next.
+  // the iframe never fires 'load' and would sit black forever, so bail to the next.
   frameStuck = setTimeout(()=>{ if (!frameOk) fail("Live panel blocked embedding: " + it.title); }, 8000);
   // Keep keyboard focus on the page so the arrow keys always work; mouse is unaffected.
   frame.blur(); window.focus();
@@ -544,6 +546,7 @@ async function showISS(it){
     + '<div class="iss-legend"><span class="lg lg-p">Ground track</span>'
     +   '<span class="lg lg-f">Predicted orbit</span><span class="lg lg-n">Night side</span></div>';
   showCaptionTemporarily(11000);
+  reveal();
 
   const dot   = document.getElementById('issDot');
   const stats = document.getElementById('issStats');
@@ -556,7 +559,7 @@ async function showISS(it){
     const [l1, l2] = await fetchISSTLE();
     if (g !== gen) return;
     satrec = satellite.twoline2satrec(l1, l2);
-  } catch(e){ /* no TLE — fall back to a live-position dot with no prediction */ }
+  } catch(e){ /* no TLE, so fall back to a live-position dot with no prediction */ }
 
   function propAt(date){
     const pv = satellite.propagate(satrec, date);
@@ -618,14 +621,37 @@ async function showISS(it){
 // Try NASA's official API first; when the shared DEMO_KEY is rate-limited
 // (HTTP 429/503) fall back to a keyless, CORS-friendly APOD mirror so the
 // panel still shows today's image instead of failing.
-async function getAPOD(){
+// Fetch JSON with a hard timeout so a hanging endpoint can't stall the slide.
+async function fetchJSON(url, ms){
+  const c = new AbortController();
+  const t = setTimeout(()=>c.abort(), ms);
   try {
-    const r = await fetch('https://api.nasa.gov/planetary/apod?thumbs=true&api_key=' + NASA_API_KEY);
-    if (r.ok) return await r.json();
-  } catch(e){ /* fall through to the mirror */ }
-  const r2 = await fetch('https://apod.ellanan.com/api');
-  if (!r2.ok) throw new Error('apod ' + r2.status);
-  return await r2.json();
+    const r = await fetch(url, { signal:c.signal });
+    if (!r.ok) throw new Error(url + ' ' + r.status);
+    return await r.json();
+  } finally { clearTimeout(t); }
+}
+
+async function getAPOD(){
+  // Serve the launch-time cache (valid for the day) so the slide is instant.
+  if (apodCache.data && (Date.now() - apodCache.t) < 6*60*60*1000) return apodCache.data;
+  const nasa   = ()=> fetchJSON('https://api.nasa.gov/planetary/apod?thumbs=true&api_key=' + NASA_API_KEY, 4500);
+  const mirror = ()=> fetchJSON('https://apod.ellanan.com/api', 6000);
+  // DEMO_KEY is heavily rate-limited (503) and can hang for many seconds; when
+  // no real key is set, hit the keyless mirror first so APOD loads promptly.
+  const order = NASA_API_KEY === 'DEMO_KEY' ? [mirror, nasa] : [nasa, mirror];
+  let lastErr;
+  for (const f of order){ try { const d = await f(); apodCache = { t:Date.now(), data:d }; return d; } catch(e){ lastErr = e; } }
+  throw lastErr || new Error('apod failed');
+}
+
+// Fetch APOD and warm the browser's image cache at launch so there is no wait
+// by the time the slide comes around.
+function preloadAPOD(){
+  getAPOD().then(d => {
+    const src = d && (d.hdurl || d.url);
+    if (src && d.media_type !== 'video'){ const im = new Image(); im.src = src; }
+  }).catch(()=>{});
 }
 
 async function showAPOD(it){
@@ -640,9 +666,15 @@ async function showAPOD(it){
     const exp = d.explanation || '';
     infoEl.textContent = exp.length > 600 ? exp.slice(0, 600) + '\u2026' : exp;
     document.getElementById('credit').textContent = d.copyright ? ('\u00a9 ' + d.copyright.trim()) : 'NASA \u00b7 Public Domain';
-    if (d.media_type === 'image'){
+    if (d.media_type !== 'video'){
       const src = d.hdurl || d.url;
-      panel.innerHTML = '<div class="apod-img" style="background-image:url(&#39;' + src + '&#39;)"></div>';
+      // Real <img> so the picture paints progressively and gives a load event to
+      // fade in on, instead of blocking on a multi-MB hi-res background download.
+      panel.innerHTML = '<img class="apod-img" alt="">';
+      const el = panel.querySelector('.apod-img');
+      el.onload = ()=>{ if (g === gen) reveal(); };
+      el.onerror = ()=>{ if (g === gen && d.url && el.src !== d.url) el.src = d.url; else reveal(); };
+      el.src = src;
     } else {
       // APOD video: hand off to the iframe
       panel.style.display = 'none';
@@ -687,6 +719,7 @@ async function showEvents(it){
       + '<div class="ev-prov">' + prov + '</div></div>';
   }).join('');
   panel.innerHTML = '<div class="ev-wrap"><div class="ev-h">Upcoming Launches</div>' + rows + '</div>';
+  reveal();
   errEl.textContent = ''; consecutiveFails = 0;
   panelTimer = setTimeout(next, (it.dwell ? it.dwell*1000 : 32000));
 }
@@ -746,6 +779,7 @@ async function showNews(it){
   panel.innerHTML = '<div class="news-dash">' + hero
     + '<div class="news-list"><div class="news-list-h">More Headlines</div>' + items + '</div></div>';
   document.getElementById('credit').textContent = 'Source: Spaceflight News API';
+  reveal();
   errEl.textContent = ''; consecutiveFails = 0;
   panelTimer = setTimeout(next, (it.dwell ? it.dwell*1000 : 30000));
 }
@@ -753,13 +787,14 @@ async function showNews(it){
 v.addEventListener('loadeddata', ()=>{
   clearTimeout(videoStuck);
   loader.style.display='none'; errEl.textContent=''; consecutiveFails=0;
+  reveal();
   showCaptionTemporarily(9000);
 });
 v.addEventListener('ended', next);
 v.addEventListener('error', ()=>{ fail("Couldn't load: " + ITEMS[idx].title); });
 
-// A live iframe reported a successful load — cancel the embed-block fallback.
-frame.addEventListener('load', ()=>{ frameOk = true; clearTimeout(frameStuck); errEl.textContent=''; consecutiveFails=0; try{ window.focus(); }catch(e){} });
+// A live iframe reported a successful load, so cancel the embed-block fallback.
+frame.addEventListener('load', ()=>{ frameOk = true; clearTimeout(frameStuck); errEl.textContent=''; consecutiveFails=0; reveal(); try{ window.focus(); }catch(e){} });
 
 // ---- NASA live-stream detection & auto-switch ----------------------------
 // Ask the YouTube Data API whether any configured NASA channel is broadcasting
@@ -777,7 +812,7 @@ async function fetchNasaLive(){
         const it = j.items[0];
         return { videoId: it.id.videoId, title: it.snippet.title, channel: it.snippet.channelTitle };
       }
-    } catch(e){ /* network hiccup — ignore this channel and try the next */ }
+    } catch(e){ /* network hiccup, ignore this channel and try the next */ }
   }
   return null;
 }
@@ -841,12 +876,15 @@ async function loadEnv(){
       if (key === 'YT_API_KEY') YT_API_KEY = val;
       else if (key === 'NASA_API_KEY' && val) NASA_API_KEY = val;
     });
-  } catch(e){ /* no .env (or opened via file://) — use inline defaults */ }
+  } catch(e){ /* no .env (or opened via file://), so use inline defaults */ }
 }
 
-// Crossfade helper: fade the current surface out, swap, then fade the new one in.
+// Crossfade helper: fade the current surface out, swap in the next one while it
+// is still invisible, then fade it in only once its content is actually ready
+// (video first frame, iframe load, or fetched panel HTML). A safety timeout
+// reveals the slide anyway so a slow feed can never leave the wall blank.
 const FADE_MS = 600;
-let fading = false;
+let fading = false, revealFallback = null;
 function go(i){
   if (liveActive) return;
   if (fading){ show(i); return; }   // mid-fade rapid skip: swap immediately
@@ -854,12 +892,20 @@ function go(i){
   document.body.classList.add('fade-out');
   setTimeout(()=>{
     show(i);
-    // Paint the new surface at opacity 0, then release the class to fade it in.
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      document.body.classList.remove('fade-out');
-      fading = false;
-    }));
+    clearTimeout(revealFallback);
+    revealFallback = setTimeout(reveal, 4000);
   }, FADE_MS);
+}
+
+// Fade the freshly prepared slide in. Each surface calls this once its content
+// is ready; the double rAF lets the browser paint it at opacity 0 first.
+function reveal(){
+  clearTimeout(revealFallback);
+  if (!fading) return;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    document.body.classList.remove('fade-out');
+    fading = false;
+  }));
 }
 
 function next(){ if (liveActive) return; go((idx+1) % ITEMS.length); }
@@ -872,7 +918,7 @@ function wake(){
   clearTimeout(idleT);
   idleT = setTimeout(()=>document.body.classList.add('idle'), 4000);
   // On live interactive panels, restart the "no interaction" countdown instead
-  // of popping the caption back up — so you can keep clicking around.
+  // of popping the caption back up, so you can keep clicking around.
   if (curType === 'frame'){
     clearTimeout(frameTimer);
     frameTimer = setTimeout(next, IDLE_ADVANCE_MS);
@@ -881,7 +927,7 @@ function wake(){
 document.addEventListener('mousemove', wake);
 document.addEventListener('touchstart', wake);
 document.addEventListener('click', (e)=>{
-  // don't hijack clicks meant for a live iframe \u2014 just reset its idle countdown
+  // don't hijack clicks meant for a live iframe, just reset its idle countdown
   if (frameWrap.style.display === 'block'){ wake(); return; }
   next();
 });
@@ -898,8 +944,9 @@ document.addEventListener('keydown', (e)=>{
 
 show(0);
 
-// Load .env keys, then start NASA live-stream detection (no-op unless YT_API_KEY is set).
+// Load .env keys, then warm APOD and start NASA live-stream detection.
 loadEnv().then(()=>{
+  preloadAPOD();
   if (YT_API_KEY){
     pollLive();
     livePoll = setInterval(pollLive, LIVE_POLL_MS);
