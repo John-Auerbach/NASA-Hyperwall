@@ -44,11 +44,34 @@
   #eonetPts { position:absolute; inset:0; }
   .eonet-pt { position:absolute; width:12px; height:12px; margin:-6px 0 0 -6px; border-radius:50%;
     box-shadow:0 0 6px rgba(0,0,0,.6); opacity:.9; }
-  .iss-dot { position:absolute; width:16px; height:16px; margin:-8px 0 0 -8px; border-radius:50%; background:#fff;
-    box-shadow:0 0 0 4px rgba(126,203,138,.35), 0 0 18px 6px rgba(126,203,138,.7); animation:isspulse 2s infinite; }
-  @keyframes isspulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.28);} }
-  .iss-stats { position:fixed; top:92px; left:34px; font-size:20px; letter-spacing:1px; color:#dfe6ee;
-    background:rgba(0,0,0,.55); padding:12px 16px; border-radius:8px; line-height:1.5; font-variant-numeric:tabular-nums; }
+  .iss-frame { background:#02040a; overflow:hidden; box-shadow:0 0 120px rgba(0,0,0,.7) inset; }
+  .iss-basemap { position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+    filter:saturate(.7) brightness(.6) contrast(1.05); }
+  .iss-layer { position:absolute; inset:0; width:100%; height:100%; }
+  .iss-grid line { stroke:rgba(130,160,190,.10); stroke-width:.2; }
+  .iss-night { fill:rgba(2,5,14,.58); stroke:rgba(120,170,255,.35); stroke-width:.25; }
+  .iss-track-future { fill:none; stroke:#5fd0ff; stroke-width:.7; stroke-dasharray:2.4 2;
+    filter:drop-shadow(0 0 2px rgba(95,208,255,.8)); }
+  .iss-track-past { fill:none; stroke:#ffd166; stroke-width:.9;
+    filter:drop-shadow(0 0 2px rgba(255,209,102,.7)); }
+  .iss-dot { position:absolute; }
+  .iss-marker { position:absolute; width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:50%; background:#fff;
+    box-shadow:0 0 0 4px rgba(255,209,102,.30), 0 0 20px 7px rgba(255,209,102,.75); animation:isspulse 2s infinite; }
+  .iss-label { position:absolute; left:11px; top:-8px; font-size:13px; font-weight:700; letter-spacing:1px;
+    color:#ffe6a3; text-shadow:0 0 6px rgba(0,0,0,.9); }
+  @keyframes isspulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.25);} }
+  .iss-stats { position:fixed; top:96px; left:34px; font-size:19px; letter-spacing:1px; color:#eef3f8;
+    background:rgba(4,10,20,.62); padding:14px 18px; border-radius:10px; line-height:1.55;
+    font-variant-numeric:tabular-nums; min-width:236px; border:1px solid rgba(120,160,200,.18); }
+  .iss-stats .s-row { display:flex; justify-content:space-between; gap:26px; }
+  .iss-stats .s-row span { color:#8fa3b8; }
+  .iss-legend { position:fixed; bottom:118px; left:34px; display:flex; gap:16px; font-size:14px; color:#c3cdd7; }
+  .iss-legend .lg { display:flex; align-items:center; gap:8px; background:rgba(4,10,20,.55);
+    padding:6px 12px; border-radius:20px; }
+  .iss-legend .lg::before { content:""; width:16px; height:4px; border-radius:2px; }
+  .iss-legend .lg-p::before { background:#ffd166; }
+  .iss-legend .lg-f::before { background:#5fd0ff; }
+  .iss-legend .lg-n::before { background:rgba(120,170,255,.5); }
   .eonet-legend { position:fixed; top:92px; left:34px; display:flex; flex-wrap:wrap; gap:8px 14px; max-width:60%;
     font-size:14px; color:#c3cdd7; }
   .eonet-legend span { background:rgba(0,0,0,.5); padding:5px 10px; border-radius:20px; }
@@ -66,6 +89,24 @@
   .ev-when { width:200px; color:#8b98a6; font-size:18px; font-variant-numeric:tabular-nums; }
   .ev-name { flex:1; font-size:24px; font-weight:600; color:#eef3f8; }
   .ev-prov { color:#9aa7b4; font-size:16px; text-align:right; }
+
+  /* ---- news dashboard slide ---- */
+  .news-dash { position:absolute; inset:0; display:flex; gap:38px; padding:7% 6% 12%; }
+  .news-hero { flex:1.35; display:flex; flex-direction:column; border-radius:14px; overflow:hidden;
+    background:#0a0f16; border:1px solid rgba(120,160,200,.14); min-width:0; }
+  .news-hero-img { flex:1; min-height:0; background:#0a0f16 center/cover no-repeat; }
+  .news-hero-body { padding:26px 30px 28px; background:linear-gradient(to top, rgba(0,0,0,.92), rgba(6,12,22,.7)); }
+  .news-hero-tag { font-size:13px; letter-spacing:2.5px; text-transform:uppercase; color:#ff9f43; font-weight:700; margin-bottom:12px; }
+  .news-hero-title { font-size:34px; font-weight:700; line-height:1.14; color:#fff; }
+  .news-hero-sum { font-size:17px; color:#c3cdd7; margin-top:14px; line-height:1.5; }
+  .news-hero-meta { font-size:14px; color:#7ea6c8; margin-top:16px; letter-spacing:1.5px; text-transform:uppercase; }
+  .news-list { flex:1; display:flex; flex-direction:column; min-width:0; }
+  .news-list-h { font-size:15px; letter-spacing:2.5px; text-transform:uppercase; color:#5fa8d3; margin-bottom:8px; font-weight:600; }
+  .news-item { display:flex; gap:16px; padding:15px 0; border-top:1px solid rgba(255,255,255,.09); align-items:center; }
+  .news-item-thumb { width:108px; height:64px; flex:none; border-radius:6px; background:#0a0f16 center/cover no-repeat; }
+  .news-item-body { flex:1; min-width:0; }
+  .news-item-title { font-size:19px; font-weight:600; color:#eef3f8; line-height:1.26; }
+  .news-item-meta { font-size:13px; color:#8b98a6; margin-top:5px; letter-spacing:.5px; }
 
   /* ---- crossfade between items ---- */
   #stage, #frameWrap, #panel { transition:opacity .6s ease; }
@@ -93,28 +134,16 @@
   </div>
   <div id="help">tap/→ skip · ← back · f fullscreen</div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/5.0.0/satellite.min.js"></script>
 <script>
 const B = "https://svs.gsfc.nasa.gov/vis/";
+const ISS_BASEMAP = "https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57752/land_shallow_topo_2048.jpg";
 
 /* ---- live-data feeds (all CORS-friendly from a plain browser page) --------
    NASA_API_KEY: DEMO_KEY works out of the box but is heavily rate-limited.
    Get a free key at https://api.nasa.gov and put it in the .env file next to
    this page (see .env.example). Values in .env override the defaults below. */
 let NASA_API_KEY = "DEMO_KEY";
-const EARTH_IMG = "https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57752/land_shallow_topo_2048.jpg";
-// EONET category id -> dot color (unmapped categories fall back to default)
-const EONET_COLORS = { 6:"#e9c46a", 7:"#c9a227", 8:"#ff5a3c", 10:"#4ea8de", 12:"#ff9f1c",
-  15:"#8ecae6", 16:"#c77dff", 17:"#e07a5f", 18:"#e0fbfc", 19:"#f4a261", default:"#5fa8d3" };
-// Upcoming eclipses (UTC of greatest eclipse). The next future one is shown.
-const ECLIPSES = [
-  { date:"2026-08-12", time:"17:46", name:"Total Solar Eclipse",   label:"Arctic · Greenland · Iceland · Spain" },
-  { date:"2026-08-28", time:"04:13", name:"Partial Lunar Eclipse", label:"Americas · Europe · Africa" },
-  { date:"2027-02-06", time:"16:00", name:"Annular Solar Eclipse", label:"Chile · Argentina · Atlantic · W. Africa" },
-  { date:"2027-07-18", time:"16:04", name:"Partial Lunar Eclipse", label:"Africa · Asia · Australia" },
-  { date:"2027-08-02", time:"10:07", name:"Total Solar Eclipse",   label:"Spain · North Africa · Middle East" },
-  { date:"2028-01-26", time:"15:08", name:"Annular Solar Eclipse", label:"Americas · Spain · Portugal" },
-  { date:"2028-07-22", time:"02:56", name:"Total Solar Eclipse",   label:"Australia · New Zealand" }
-];
 
 /* ---- NASA live-stream auto-switch (optional) ----------------------------
    Detecting whether NASA is broadcasting requires the YouTube Data API v3.
@@ -156,43 +185,16 @@ const ITEMS = [
     url: B+"a000000/a005600/a005656/eclipse_202608_global_2160p30.mp4" },
 
   { type:"video",
-    kicker:"Ocean · EIC Hyperwall",
-    title:"Perpetual Ocean 2 — The Agulhas Current",
-    info:"This visualization showcases the Agulhas Current as it carries warm water along the east coast of Southern Africa. Giant spinning whirlpools called Agulhas Rings break off from this current, each one larger than many cities. These massive rings transport warm water from the Indian Ocean into the Atlantic Ocean, helping move heat around our planet and affecting global weather patterns.",
-    // native EIC hyperwall resolution (3840x1080 chosen for playback; 7680x2160 also exists)
-    url: B+"a000000/a005500/a005505/OceanFlows_AgulhasCurrent_3840x1080.mp4" },
-
-  { type:"video",
-    kicker:"Ocean · El Niño",
-    title:"2015–2016 El Niño — Sea Surface Temperature & Currents",
-    info:"NASA tracks the 2015–2016 El Niño through changes in sea surface temperature and ocean currents. Blue marks water colder than normal, red warmer than normal; yellow arrows show eastward currents and white arrows westward. Warm water sloshes east across the Pacific as the trade winds weaken — the signature of a strong El Niño.",
-    url:"https://svs.gsfc.nasa.gov/vis/a000000/a004500/a004544/GMAO_elNino_oceanTemperatureAnomaly_currents_1080p.mp4" },
-
-  { type:"video",
-    kicker:"Atmosphere · Greenhouse Gases",
-    title:"Global Atmospheric Carbon Dioxide",
-    info:"A NASA model illustrates how carbon dioxide moves through Earth's atmosphere over a single year, built from OCO-2 satellite observations assimilated into NASA's GEOS model. Northern-hemisphere plants draw CO₂ down each summer through photosynthesis, then release it again in fall and winter — a planetary breath visible from space.",
-    url: B+"a000000/a005100/a005115/TotalCO2_OCO2_1920x1080p30.mp4" },
-
-  { type:"video",
-    kicker:"Atmosphere · Greenhouse Gases",
-    title:"Carbon Dioxide and Methane, Side by Side",
-    info:"Volumetric carbon dioxide (CO₂) and methane (CH₄) shown together on a global scale, accumulating in Earth's atmosphere over the course of the year 2021.",
-    url: B+"a000000/a005100/a005115/GHG_Composite_1920x1080p30.mp4" },
+    kicker:"Atmosphere · Aerosols",
+    title:"A World of Aerosols",
+    info:"A NASA GEOS model reveals the invisible particles filling our skies, with a color key: sea salt (blue) spun up by storms, dust (pink/magenta) lifting off deserts, smoke from wildfires (orange/red), and sulfate from pollution and volcanoes (green). On-screen annotations flag hurricanes, Saharan dust, volcanic plumes, and wildfire smoke as they move across the planet.",
+    url:"https://svs.gsfc.nasa.gov/vis/a000000/a005500/a005572/Aerosols_AnnotationsLabel_1920x1080_30p.mp4" },
 
   { type:"video", daily:true,
     kicker:"Wildfires · Updated Daily",
     title:"Global Wildfire Smoke Forecast",
     info:"Global wildfire smoke intensity from NASA's GEOS-FP model, tracking brown carbon aerosol optical depth from yesterday through a four-day forecast. Darker areas mean more smoke in the atmospheric column — and poorer air quality. This visualization is regenerated every day; wildfire smoke can travel thousands of miles, carrying PM2.5 particles small enough to enter the bloodstream.",
     url: B+"a000000/a005600/a005624/GMAO_global_smoke_forecast_4096x2048.mp4" },
-
-  { type:"video",
-    kicker:"Solar System · Planetary Science",
-    title:"Our Solar System",
-    info:"The eight planets plus Pluto, each rendered with its true planetary axial tilt — the angle that gives every world its seasons.",
-    url: B+"a030000/a030700/a030710/planets3x3_pluto_colorMercury_axis_tilt_1080p.mp4" },
-
-  /* ---- ADDED SLIDES: each URL verified HTTP 200 against svs.gsfc.nasa.gov ---- */
 
   { type:"video",
     kicker:"Cryosphere · Arctic",
@@ -213,10 +215,41 @@ const ITEMS = [
     url:"https://svs.gsfc.nasa.gov/vis/a000000/a004900/a004975/GISTEMP_Spiral_F_2160sq30.mp4" },
 
   { type:"video",
-    kicker:"Atmosphere · Aerosols",
-    title:"A World of Aerosols",
-    info:"A NASA GEOS model reveals the invisible particles filling our skies, with a color key: sea salt (blue) spun up by storms, dust (pink/magenta) lifting off deserts, smoke from wildfires (orange/red), and sulfate from pollution and volcanoes (green). On-screen annotations flag hurricanes, Saharan dust, volcanic plumes, and wildfire smoke as they move across the planet.",
-    url:"https://svs.gsfc.nasa.gov/vis/a000000/a005500/a005572/Aerosols_AnnotationsLabel_1920x1080_30p.mp4" },
+    kicker:"Ocean · EIC Hyperwall",
+    title:"Perpetual Ocean 2 — The Agulhas Current",
+    info:"This visualization showcases the Agulhas Current as it carries warm water along the east coast of Southern Africa. Giant spinning whirlpools called Agulhas Rings break off from this current, each one larger than many cities. These massive rings transport warm water from the Indian Ocean into the Atlantic Ocean, helping move heat around our planet and affecting global weather patterns.",
+    // native EIC hyperwall resolution (3840x1080 chosen for playback; 7680x2160 also exists)
+    url: B+"a000000/a005500/a005505/OceanFlows_AgulhasCurrent_3840x1080.mp4" },
+
+  { type:"video",
+    kicker:"Sun · Heliophysics Fleet",
+    title:"NASA's Heliophysics Fleet, 2026",
+    info:"The armada of spacecraft NASA uses to study the Sun and its influence — from missions circling Earth to Parker Solar Probe diving through the corona itself — shown in their orbits across the inner solar system.",
+    url:"https://svs.gsfc.nasa.gov/vis/a000000/a005600/a005609/helio_fleet_2026_1080p60.mp4" },
+
+  { type:"video",
+    kicker:"Sun · Heliophysics · Space Weather",
+    title:"Solar Wind Meets Earth's Magnetosphere",
+    info:"Earth's magnetosphere — the protective magnetic bubble that surrounds us — is shaped like a tadpole, streaming away from the Sun. This visualization follows the Moon as it passes in and out of that bubble over ten days, fully exposed to the solar wind whenever it is outside. Earth's magnetosphere is shown in green, magnetic field lines in orange and purple, and faint white streamlines represent the solar wind flowing past.",
+    url:"https://svs.gsfc.nasa.gov/vis/a000000/a005600/a005648/moonGamera_Moon_6-25-2026a_moon_wind_1080p30.mp4" },
+
+  { type:"video",
+    kicker:"Atmosphere · Greenhouse Gases",
+    title:"Global Atmospheric Carbon Dioxide",
+    info:"A NASA model illustrates how carbon dioxide moves through Earth's atmosphere over a single year, built from OCO-2 satellite observations assimilated into NASA's GEOS model. Northern-hemisphere plants draw CO₂ down each summer through photosynthesis, then release it again in fall and winter — a planetary breath visible from space.",
+    url: B+"a000000/a005100/a005115/TotalCO2_OCO2_1920x1080p30.mp4" },
+
+  { type:"video",
+    kicker:"Atmosphere · Greenhouse Gases",
+    title:"Carbon Dioxide and Methane, Side by Side",
+    info:"Volumetric carbon dioxide (CO₂) and methane (CH₄) shown together on a global scale, accumulating in Earth's atmosphere over the course of the year 2021.",
+    url: B+"a000000/a005100/a005115/GHG_Composite_1920x1080p30.mp4" },
+
+  { type:"video",
+    kicker:"Solar System · Planetary Science",
+    title:"Our Solar System",
+    info:"The eight planets plus Pluto, each rendered with its true planetary axial tilt — the angle that gives every world its seasons.",
+    url: B+"a030000/a030700/a030710/planets3x3_pluto_colorMercury_axis_tilt_1080p.mp4" },
 
   { type:"video",
     kicker:"Extreme Weather · Typhoons",
@@ -231,10 +264,10 @@ const ITEMS = [
     url:"https://svs.gsfc.nasa.gov/vis/a000000/a005600/a005649/AIA.0171A-Frames.PSF_stamped_4096p30.mp4" },
 
   { type:"video",
-    kicker:"Sun · Heliophysics Fleet",
-    title:"NASA's Heliophysics Fleet, 2026",
-    info:"The armada of spacecraft NASA uses to study the Sun and its influence — from missions circling Earth to Parker Solar Probe diving through the corona itself — shown in their orbits across the inner solar system.",
-    url:"https://svs.gsfc.nasa.gov/vis/a000000/a005600/a005609/helio_fleet_2026_1080p60.mp4" },
+    kicker:"Sun · Heliophysics · High Definition",
+    title:"Simulating Solar Flows",
+    info:"Beneath the Sun's surface, a roiling layer of super-heated plasma churns. Immense pressure and heat send tightly packed ionized atoms racing through the Sun's outer layers, twisting and tangling the magnetic field into rotating columns of plasma. This high-definition supercomputer simulation reveals that turbulent subsurface motion — measured as helicity — that drives space weather and shapes life on Earth.",
+    url:"https://svs.gsfc.nasa.gov/vis/a030000/a031400/a031400/helicity_4k_full_color.mp4" },
 
   { type:"video",
     kicker:"Cosmos · James Webb Space Telescope",
@@ -255,12 +288,6 @@ const ITEMS = [
     url:"https://svs.gsfc.nasa.gov/vis/a010000/a014900/a014917/Roman_GPS_Carina_Zoom_Out_1080.mp4" },
 
   { type:"video",
-    kicker:"Earth · City Lights",
-    title:"The Black Marble — Earth at Night",
-    info:"NASA's 'Black Marble' assembles satellite views of Earth after dark, where the glow of cities and roads traces where people live — and how human settlement has spread and brightened over time.",
-    url:"https://svs.gsfc.nasa.gov/vis/a010000/a014800/a014872/06_25_BlackMarble_FINALCUT.mp4" },
-
-  { type:"video",
     kicker:"Earth · Land Change",
     title:"Lake Carnegie, Seen From Orbit",
     info:"Landsat and Sentinel-2 satellites track Lake Carnegie in Western Australia — an ephemeral lake that fills and dries with the seasons, its shape shifting dramatically across the years in this natural-color time series.",
@@ -278,24 +305,16 @@ const ITEMS = [
     title:"Astronomy Picture of the Day",
     info:"Loading today's featured image from NASA…",
     dwell:30 },
-
+  { type:"news",
+    kicker:"Live Data · Headlines",
+    title:"Top Space & Science Headlines",
+    info:"A live dashboard of the biggest space and science stories right now, aggregated from major newsrooms and refreshed on every loop.",
+    dwell:32 },
   { type:"iss",
     kicker:"Live Data · Human Spaceflight",
     title:"Where Is the Space Station Right Now?",
-    info:"The International Space Station orbits Earth roughly every 90 minutes at about 28,000 km/h. Its live ground position is plotted on the map below in real time.",
+    info:"The International Space Station orbits Earth roughly every 90 minutes at about 28,000 km/h. Its live position is propagated from the latest orbital elements (TLE) with an SGP4 model — the gold line is the ground track just flown, the blue dashed line is the predicted path ahead, and the shaded region is Earth's night side.",
     dwell:45 },
-
-  { type:"eonet",
-    kicker:"Live Data · Natural Events",
-    title:"Earth's Natural Events, Right Now",
-    info:"NASA's Earth Observatory Natural Event Tracker (EONET) maps active wildfires, storms, volcanoes, and floods across the planet in near-real time.",
-    dwell:40 },
-
-  { type:"countdown",
-    kicker:"Upcoming · Countdown",
-    title:"Next Eclipse · Next Launch",
-    info:"Live countdowns to the next solar or lunar eclipse and the next rocket launch anywhere on Earth.",
-    dwell:30 },
 
   { type:"events",
     kicker:"Upcoming · Launch Schedule",
@@ -345,6 +364,7 @@ let videoStuck = null, consecutiveFails = 0, focusGuard = null;
 let liveActive = false, liveRecheck = null, livePoll = null, suppressLiveUntil = 0;
 let panelTimer = null, issInterval = null, tickInterval = null, curType = null;
 let launchCache = { t:0, data:null };
+let gen = 0;   // bumped on every show(); async panels bail if it changes mid-fetch
 
 // Clear every timer/interval any surface might have running before switching.
 function clearAllTimers(){
@@ -387,6 +407,7 @@ function showCaptionTemporarily(ms){
 
 function show(i){
   idx = i;
+  gen++;
   clearAllTimers();
   const it = ITEMS[i];
   curType = it.type;
@@ -407,10 +428,9 @@ function show(i){
     case 'video':     return showVideo(it);
     case 'frame':     return showFrame(it);
     case 'iss':       return showISS(it);
-    case 'eonet':     return showEONET(it);
     case 'apod':      return showAPOD(it);
-    case 'countdown': return showCountdown(it);
     case 'events':    return showEvents(it);
+    case 'news':      return showNews(it);
     default:          return showVideo(it);
   }
 }
@@ -445,90 +465,176 @@ function showFrame(it){
   frameTimer = setTimeout(next, (it.dwell ? it.dwell*1000 : IDLE_ADVANCE_MS));
 }
 
-// Equirectangular map helpers -------------------------------------------------
+// Live ISS tracker: SGP4 orbit propagation + day/night terminator ------------
+// Equirectangular map coords: x = lon+180 (0..360), y = 90-lat (0..180).
 function lonToPct(lon){ return (lon + 180) / 360 * 100; }
 function latToPct(lat){ return (90 - lat) / 180 * 100; }
-function emapFrame(inner){
-  return '<div class="emap"><div class="emap-frame">'
-    + '<img src="' + EARTH_IMG + '" alt="" onerror="this.style.display=&#39;none&#39;">'
-    + (inner || '') + '</div></div>';
+
+function issGrid(){
+  let s = '';
+  for (let lon = 30; lon < 360; lon += 30) s += '<line x1="'+lon+'" y1="0" x2="'+lon+'" y2="180"/>';
+  for (let lat = 30; lat < 180; lat += 30) s += '<line x1="0" y1="'+lat+'" x2="360" y2="'+lat+'"/>';
+  return s;
 }
 
-// Live ISS ground track -------------------------------------------------------
-function showISS(it){
+// Build an SVG path from lon/lat points, lifting the pen at the ±180° seam.
+function issTrack(points){
+  let d = '', prev = null;
+  for (const p of points){
+    const x = p.lon + 180, y = 90 - p.lat;
+    if (prev === null || Math.abs(x - prev) > 180) d += ' M' + x.toFixed(2) + ' ' + y.toFixed(2);
+    else d += ' L' + x.toFixed(2) + ' ' + y.toFixed(2);
+    prev = x;
+  }
+  return d.trim();
+}
+
+// Subsolar point (declination + longitude) for the day/night terminator.
+function subsolar(date){
+  const rad = Math.PI/180;
+  const n = date.getTime()/86400000 + 2440587.5 - 2451545.0;   // days since J2000
+  const L = (280.460 + 0.9856474*n) % 360;
+  const g = ((357.528 + 0.9856003*n) % 360) * rad;
+  const lambda = (L + 1.915*Math.sin(g) + 0.020*Math.sin(2*g)) * rad;
+  const eps = (23.439 - 0.0000004*n) * rad;
+  const dec = Math.asin(Math.sin(eps)*Math.sin(lambda));
+  const ra  = Math.atan2(Math.cos(eps)*Math.sin(lambda), Math.cos(lambda));
+  let subLon = (ra - satellite.gstime(date)) / rad;
+  subLon = ((subLon + 180) % 360 + 360) % 360 - 180;
+  return { dec, subLon };
+}
+
+function terminatorPath(date){
+  const { dec, subLon } = subsolar(date);
+  const rad = Math.PI/180;
+  let d = '';
+  for (let lon = -180; lon <= 180; lon += 2){
+    const H = (lon - subLon) * rad;
+    const lat = Math.atan(-Math.cos(H)/Math.tan(dec)) / rad;
+    d += (lon === -180 ? 'M' : 'L') + (lon+180).toFixed(2) + ' ' + (90-lat).toFixed(2) + ' ';
+  }
+  return d + (dec >= 0 ? 'L360 180 L0 180 Z' : 'L360 0 L0 0 Z');   // close over the dark hemisphere
+}
+
+// Latest ISS orbital elements; falls back to a second source.
+async function fetchISSTLE(){
+  try {
+    const r = await fetch('https://tle.ivanstanojevic.me/api/tle/25544');
+    if (r.ok){ const j = await r.json(); if (j.line1 && j.line2) return [j.line1, j.line2]; }
+  } catch(e){ /* try the fallback */ }
+  const r2 = await fetch('https://celestrak.org/NORAD/elements/gp.php?CATNR=25544&FORMAT=TLE');
+  const lines = (await r2.text()).trim().split(/\r?\n/);
+  return [lines[1], lines[2]];
+}
+
+async function showISS(it){
+  const g = gen;
   panel.style.display = 'block';
   liveEl.style.display = 'block';
-  panel.innerHTML = emapFrame('<div class="iss-dot" id="issDot" style="display:none"></div>')
-    + '<div class="iss-stats" id="issStats">Acquiring signal…</div>';
+  panel.innerHTML =
+      '<div class="emap"><div class="emap-frame iss-frame">'
+    +   '<img class="iss-basemap" src="' + ISS_BASEMAP + '" alt="" onerror="this.style.display=&#39;none&#39;">'
+    +   '<svg class="iss-layer" viewBox="0 0 360 180" preserveAspectRatio="none"><path id="issNight" class="iss-night"/></svg>'
+    +   '<svg class="iss-layer iss-grid" viewBox="0 0 360 180" preserveAspectRatio="none">' + issGrid() + '</svg>'
+    +   '<svg class="iss-layer" viewBox="0 0 360 180" preserveAspectRatio="none" style="overflow:visible">'
+    +     '<path id="issFuture" class="iss-track-future"/><path id="issPast" class="iss-track-past"/></svg>'
+    +   '<div class="iss-dot" id="issDot" style="display:none"><span class="iss-marker"></span><span class="iss-label">ISS</span></div>'
+    + '</div></div>'
+    + '<div class="iss-stats" id="issStats">Acquiring orbit…</div>'
+    + '<div class="iss-legend"><span class="lg lg-p">Ground track</span>'
+    +   '<span class="lg lg-f">Predicted orbit</span><span class="lg lg-n">Night side</span></div>';
   showCaptionTemporarily(11000);
-  const dot = document.getElementById('issDot');
+
+  const dot   = document.getElementById('issDot');
   const stats = document.getElementById('issStats');
-  async function upd(){
-    try {
-      const r = await fetch('https://api.wheretheiss.at/v1/satellites/25544');
-      if (!r.ok) throw 0;
-      const d = await r.json();
-      dot.style.left = lonToPct(d.longitude) + '%';
-      dot.style.top  = latToPct(d.latitude) + '%';
-      dot.style.display = 'block';
-      stats.innerHTML = 'LAT ' + d.latitude.toFixed(2) + '\u00b0  LON ' + d.longitude.toFixed(2) + '\u00b0'
-        + '<br>ALT ' + Math.round(d.altitude) + ' km  \u00b7  SPEED ' + Math.round(d.velocity).toLocaleString() + ' km/h';
-      errEl.textContent = ''; consecutiveFails = 0;
-    } catch(e){ /* transient network hiccup — keep the last known position */ }
+  const night = document.getElementById('issNight');
+  const fut   = document.getElementById('issFuture');
+  const past  = document.getElementById('issPast');
+
+  let satrec = null;
+  try {
+    const [l1, l2] = await fetchISSTLE();
+    if (g !== gen) return;
+    satrec = satellite.twoline2satrec(l1, l2);
+  } catch(e){ /* no TLE — fall back to a live-position dot with no prediction */ }
+
+  function propAt(date){
+    const pv = satellite.propagate(satrec, date);
+    if (!pv || !pv.position) return null;
+    const geo = satellite.eciToGeodetic(pv.position, satellite.gstime(date));
+    return { lon:satellite.degreesLong(geo.longitude), lat:satellite.degreesLat(geo.latitude),
+             alt:geo.height, vel:pv.velocity };
   }
-  upd();
-  issInterval = setInterval(upd, 3000);
+
+  function drawTracks(){
+    if (!satrec) return;
+    const now = Date.now(), p = [], f = [];
+    for (let m = -50; m <= 0; m++){ const q = propAt(new Date(now + m*60000)); if (q) p.push(q); }
+    for (let m = 0;  m <= 96; m++){ const q = propAt(new Date(now + m*60000)); if (q) f.push(q); }
+    past.setAttribute('d', issTrack(p));
+    fut.setAttribute('d', issTrack(f));
+  }
+
+  function drawNight(){ if (satrec) night.setAttribute('d', terminatorPath(new Date())); }
+
+  async function updDot(){
+    let lon, lat, alt, spd;
+    if (satrec){
+      const q = propAt(new Date());
+      if (!q) return;
+      lon = q.lon; lat = q.lat; alt = q.alt;
+      spd = Math.hypot(q.vel.x, q.vel.y, q.vel.z) * 3600;   // km/s -> km/h
+    } else {
+      try {
+        const r = await fetch('https://api.wheretheiss.at/v1/satellites/25544');
+        if (!r.ok) return; const d = await r.json(); if (g !== gen) return;
+        lon = d.longitude; lat = d.latitude; alt = d.altitude; spd = d.velocity;
+      } catch(e){ return; }
+    }
+    dot.style.left = lonToPct(lon) + '%';
+    dot.style.top  = latToPct(lat) + '%';
+    dot.style.display = 'block';
+    const period = satrec ? (2*Math.PI/satrec.no) : 92.7;   // minutes
+    stats.innerHTML =
+        '<div class="s-row"><span>LAT</span><b>'   + lat.toFixed(2) + '\u00b0</b></div>'
+      + '<div class="s-row"><span>LON</span><b>'   + lon.toFixed(2) + '\u00b0</b></div>'
+      + '<div class="s-row"><span>ALT</span><b>'   + Math.round(alt) + ' km</b></div>'
+      + '<div class="s-row"><span>SPEED</span><b>' + Math.round(spd).toLocaleString() + ' km/h</b></div>'
+      + '<div class="s-row"><span>PERIOD</span><b>'+ period.toFixed(1) + ' min</b></div>';
+    errEl.textContent = ''; consecutiveFails = 0;
+  }
+
+  drawNight(); drawTracks(); updDot();
+  let ticks = 0;
+  issInterval = setInterval(()=>{
+    if (g !== gen) return;
+    updDot();
+    if (++ticks % 30 === 0){ drawTracks(); drawNight(); }   // refresh path + terminator ~every 60s
+  }, 2000);
   panelTimer = setTimeout(next, (it.dwell ? it.dwell*1000 : 45000));
 }
 
-// Live EONET natural-event map ------------------------------------------------
-async function showEONET(it){
-  panel.style.display = 'block';
-  liveEl.style.display = 'block';
-  panel.innerHTML = emapFrame('<div id="eonetPts"></div>') + '<div class="eonet-legend" id="eonetLegend"></div>';
-  showCaptionTemporarily(12000);
+// Astronomy Picture of the Day ------------------------------------------------
+// Try NASA's official API first; when the shared DEMO_KEY is rate-limited
+// (HTTP 429/503) fall back to a keyless, CORS-friendly APOD mirror so the
+// panel still shows today's image instead of failing.
+async function getAPOD(){
   try {
-    const r = await fetch('https://eonet.gsfc.nasa.gov/api/v3/events?status=open&limit=150');
-    if (!r.ok) throw 0;
-    const d = await r.json();
-    const pts = document.getElementById('eonetPts');
-    const counts = {};
-    (d.events || []).forEach(ev => {
-      const g = ev.geometry && ev.geometry[ev.geometry.length - 1];
-      if (!g || !g.coordinates) return;
-      let lon, lat;
-      if (g.type === 'Point'){ lon = g.coordinates[0]; lat = g.coordinates[1]; }
-      else { const c = g.coordinates[0][0]; lon = c[0]; lat = c[1]; }
-      if (typeof lon !== 'number' || typeof lat !== 'number') return;
-      const cat = (ev.categories && ev.categories[0]) || {};
-      const color = EONET_COLORS[cat.id] || EONET_COLORS.default;
-      counts[cat.title || 'Other'] = (counts[cat.title || 'Other'] || 0) + 1;
-      const el = document.createElement('div');
-      el.className = 'eonet-pt';
-      el.style.left = lonToPct(lon) + '%';
-      el.style.top  = latToPct(lat) + '%';
-      el.style.background = color;
-      el.title = ev.title || '';
-      pts.appendChild(el);
-    });
-    const leg = document.getElementById('eonetLegend');
-    if (leg) leg.innerHTML = Object.keys(counts).sort((a,b)=>counts[b]-counts[a])
-      .map(k => '<span>' + k + ' \u00b7 ' + counts[k] + '</span>').join('');
-    infoEl.textContent = (d.events ? d.events.length : 0)
-      + " natural events are happening right now, tracked by NASA's Earth Observatory \u2014 wildfires, storms, volcanoes, floods and more.";
-    errEl.textContent = ''; consecutiveFails = 0;
-  } catch(e){ return fail("Couldn't load EONET events"); }
-  panelTimer = setTimeout(next, (it.dwell ? it.dwell*1000 : 40000));
+    const r = await fetch('https://api.nasa.gov/planetary/apod?thumbs=true&api_key=' + NASA_API_KEY);
+    if (r.ok) return await r.json();
+  } catch(e){ /* fall through to the mirror */ }
+  const r2 = await fetch('https://apod.ellanan.com/api');
+  if (!r2.ok) throw new Error('apod ' + r2.status);
+  return await r2.json();
 }
 
-// Astronomy Picture of the Day ------------------------------------------------
 async function showAPOD(it){
+  const g = gen;
   panel.style.display = 'block';
   showCaptionTemporarily(14000);
   try {
-    const r = await fetch('https://api.nasa.gov/planetary/apod?thumbs=true&api_key=' + NASA_API_KEY);
-    if (!r.ok) throw 0;
-    const d = await r.json();
+    const d = await getAPOD();
+    if (g !== gen) return;
     kickerEl.textContent = 'Astronomy Picture of the Day \u00b7 ' + (d.date || '');
     titleEl.textContent  = d.title || 'Astronomy Picture of the Day';
     const exp = d.explanation || '';
@@ -548,7 +654,8 @@ async function showAPOD(it){
       focusGuard = setInterval(()=>{ if (document.activeElement === frame){ frame.blur(); window.focus(); } }, 350);
     }
     errEl.textContent = ''; consecutiveFails = 0;
-  } catch(e){ return fail("Couldn't load APOD"); }
+  } catch(e){ if (g !== gen) return; return fail("Couldn't load APOD"); }
+  if (g !== gen) return;
   panelTimer = setTimeout(next, (it.dwell ? it.dwell*1000 : 30000));
 }
 
@@ -562,57 +669,14 @@ async function getLaunches(){
   return launchCache.data;
 }
 
-function fmtCountdown(ms){
-  if (ms < 0) ms = 0;
-  const s = Math.floor(ms / 1000);
-  const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600),
-        m = Math.floor(s % 3600 / 60), ss = s % 60;
-  return d + 'd ' + String(h).padStart(2,'0') + 'h ' + String(m).padStart(2,'0') + 'm ' + String(ss).padStart(2,'0') + 's';
-}
-function eclipseTime(e){ return new Date(e.date + 'T' + (e.time || '00:00') + ':00Z').getTime(); }
-function nextEclipse(){
-  const now = Date.now();
-  for (const e of ECLIPSES){ if (eclipseTime(e) > now) return e; }
-  return null;
-}
-
-// Next eclipse + next launch, both ticking live -------------------------------
-async function showCountdown(it){
-  panel.style.display = 'block';
-  showCaptionTemporarily(12000);
-  const ecl = nextEclipse();
-  let launch = null;
-  try { const ls = await getLaunches(); launch = ls && ls[0]; } catch(e){ /* show eclipse only */ }
-  const prov = launch && launch.launch_service_provider && launch.launch_service_provider.name || '';
-  panel.innerHTML = '<div class="cd-wrap">'
-    + '<div class="cd-card"><div class="cd-k">Next Eclipse</div>'
-      + '<div class="cd-t">' + (ecl ? ecl.name : '\u2014') + '</div>'
-      + '<div class="cd-when">' + (ecl ? ecl.label : '') + '</div>'
-      + '<div class="cd-num" id="cdEcl">\u2014</div></div>'
-    + '<div class="cd-card"><div class="cd-k">Next Launch</div>'
-      + '<div class="cd-t">' + (launch ? launch.name : 'Schedule unavailable') + '</div>'
-      + '<div class="cd-when">' + prov + '</div>'
-      + '<div class="cd-num" id="cdLaunch">' + (launch ? '\u2014' : '') + '</div></div>'
-    + '</div>';
-  const eclT = ecl ? eclipseTime(ecl) : null;
-  const lT = launch && launch.net ? new Date(launch.net).getTime() : null;
-  function tick(){
-    const a = document.getElementById('cdEcl');
-    const b = document.getElementById('cdLaunch');
-    if (a && eclT) a.textContent = fmtCountdown(eclT - Date.now());
-    if (b && lT)   b.textContent = fmtCountdown(lT - Date.now());
-  }
-  tick();
-  tickInterval = setInterval(tick, 1000);
-  panelTimer = setTimeout(next, (it.dwell ? it.dwell*1000 : 30000));
-}
-
 // Upcoming launch schedule ----------------------------------------------------
 async function showEvents(it){
+  const g = gen;
   panel.style.display = 'block';
   showCaptionTemporarily(12000);
   let ls;
-  try { ls = await getLaunches(); } catch(e){ return fail("Couldn't load launch schedule"); }
+  try { ls = await getLaunches(); } catch(e){ if (g !== gen) return; return fail("Couldn't load launch schedule"); }
+  if (g !== gen) return;
   if (!ls || !ls.length) return fail("No upcoming launches");
   const rows = ls.slice(0, 6).map(l => {
     const dt = l.net ? new Date(l.net) : null;
@@ -625,6 +689,65 @@ async function showEvents(it){
   panel.innerHTML = '<div class="ev-wrap"><div class="ev-h">Upcoming Launches</div>' + rows + '</div>';
   errEl.textContent = ''; consecutiveFails = 0;
   panelTimer = setTimeout(next, (it.dwell ? it.dwell*1000 : 32000));
+}
+
+// Escape untrusted remote text before inserting it as HTML.
+function escapeHtml(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+    { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+  ));
+}
+
+// Live news dashboard ---------------------------------------------------------
+// Spaceflight News API v4 is keyless and CORS-friendly. Pulling the latest
+// across all major space/science newsrooms (rather than a single site) surfaces
+// the biggest current stories. Rendered as a hero lead + a headline list.
+async function showNews(it){
+  const g = gen;
+  panel.style.display = 'block';
+  showCaptionTemporarily(12000);
+  let arts;
+  try {
+    const r = await fetch('https://api.spaceflightnewsapi.net/v4/articles/?limit=7&ordering=-published_at');
+    if (!r.ok) throw new Error('news ' + r.status);
+    arts = (await r.json()).results || [];
+  } catch(e){ if (g !== gen) return; return fail("Couldn't load news"); }
+  if (g !== gen) return;
+  if (!arts.length) return fail("No news available");
+
+  const fmt = (iso) => { const d = iso ? new Date(iso) : null;
+    return d && !isNaN(d) ? d.toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' }) : ''; };
+  // Sanitize the image URL so it can't break out of the CSS url('...') context.
+  const safeImg = (u) => u ? String(u).replace(/['"()\\\s]/g, '') : '';
+  const meta = (a) => escapeHtml(a.news_site || '') + (fmt(a.published_at) ? ' \u00b7 ' + fmt(a.published_at) : '');
+
+  const lead = arts[0];
+  const leadImg = safeImg(lead.image_url);
+  const leadSum = (lead.summary || '').trim();
+  const hero =
+      '<div class="news-hero">'
+    +   '<div class="news-hero-img"' + (leadImg ? ' style="background-image:url(&#39;'+leadImg+'&#39;)"' : '') + '></div>'
+    +   '<div class="news-hero-body">'
+    +     '<div class="news-hero-tag">Top Story</div>'
+    +     '<div class="news-hero-title">' + escapeHtml(lead.title || '') + '</div>'
+    +     (leadSum ? '<div class="news-hero-sum">' + escapeHtml(leadSum.length > 220 ? leadSum.slice(0,220)+'\u2026' : leadSum) + '</div>' : '')
+    +     '<div class="news-hero-meta">' + meta(lead) + '</div>'
+    +   '</div>'
+    + '</div>';
+
+  const items = arts.slice(1, 6).map(a => {
+    const img = safeImg(a.image_url);
+    const thumb = '<div class="news-item-thumb"' + (img ? ' style="background-image:url(&#39;'+img+'&#39;)"' : '') + '></div>';
+    return '<div class="news-item">' + thumb
+      + '<div class="news-item-body"><div class="news-item-title">' + escapeHtml(a.title || '') + '</div>'
+      + '<div class="news-item-meta">' + meta(a) + '</div></div></div>';
+  }).join('');
+
+  panel.innerHTML = '<div class="news-dash">' + hero
+    + '<div class="news-list"><div class="news-list-h">More Headlines</div>' + items + '</div></div>';
+  document.getElementById('credit').textContent = 'Source: Spaceflight News API';
+  errEl.textContent = ''; consecutiveFails = 0;
+  panelTimer = setTimeout(next, (it.dwell ? it.dwell*1000 : 30000));
 }
 
 v.addEventListener('loadeddata', ()=>{

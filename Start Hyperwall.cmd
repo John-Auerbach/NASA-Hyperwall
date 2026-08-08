@@ -9,26 +9,49 @@ $root = $root.TrimEnd('\')
 $port = 8787
 $url  = "http://localhost:$port/eic-hyperwall.html"
 
+# Open the wall fullscreen in Edge if present, otherwise the default browser (F11).
+function Open-Wall($u) {
+  $edge = $null
+  foreach ($c in @(
+    "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe",
+    "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe",
+    "$env:LocalAppData\Microsoft\Edge\Application\msedge.exe"
+  )) { if (Test-Path $c) { $edge = $c; break } }
+  if (-not $edge) {
+    try { $edge = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\msedge.exe' -ErrorAction Stop).'(default)' } catch {}
+    if (-not $edge -or -not (Test-Path $edge)) { $cmd = Get-Command msedge.exe -ErrorAction SilentlyContinue; if ($cmd) { $edge = $cmd.Source } }
+  }
+  if ($edge -and (Test-Path $edge)) {
+    # A dedicated profile forces a fresh Edge process so the kiosk flags always
+    # apply, even when Edge is already open. Kiosk = true borderless fullscreen.
+    $profileDir = Join-Path $env:LocalAppData 'EICHyperwall\EdgeProfile'
+    Start-Process $edge -ArgumentList @(
+      "--user-data-dir=$profileDir",
+      '--no-first-run',
+      '--kiosk', $u,
+      '--edge-kiosk-type=fullscreen',
+      '--no-default-browser-check'
+    )
+  } else {
+    Write-Host "Edge not found - opening your default browser. Press F11 for fullscreen." -ForegroundColor Yellow
+    Start-Process $u
+  }
+}
+
 $listener = New-Object System.Net.HttpListener
 $listener.Prefixes.Add("http://localhost:$port/")
 try {
   $listener.Start()
 } catch {
   Write-Host "Server already running (or port $port busy). Opening the wall..." -ForegroundColor Yellow
-  Start-Process $url
+  Open-Wall $url
   return
 }
 
 Write-Host "EIC Hyperwall serving at $url" -ForegroundColor Green
 Write-Host "Keep this window open while the wall runs. Close it to stop." -ForegroundColor DarkGray
 
-# Open fullscreen in Edge if present, otherwise the default browser (press F11).
-$edge = @(
-  "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe",
-  "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe"
-) | Where-Object { Test-Path $_ } | Select-Object -First 1
-if ($edge) { Start-Process $edge -ArgumentList '--new-window','--start-fullscreen',$url }
-else { Start-Process $url }
+Open-Wall $url
 
 $mime = @{
   '.html'='text/html; charset=utf-8'; '.htm'='text/html; charset=utf-8';
